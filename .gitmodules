@@ -1,0 +1,3 @@
+[submodule "kissmath"]
+	path = kissmath
+	url = https://github.com/rbnelr/kissmath.git
