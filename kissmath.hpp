@@ -34,7 +34,7 @@
 
 namespace kissmath {
 	// round up x to y, assume y is power of two
-	template <typename T> inline constexpr T round_up_pot (T x, T y) {
+	template <typename T> inline constexpr T align_up (T x, T y) {
 		return (x + y - 1) & ~(y - 1);
 	}
 	// check if power of two

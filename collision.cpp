@@ -1,5 +1,4 @@
 #include "collision.hpp"
-#include "../graphics/camera.hpp"
 
 bool circle_square_intersect (float2 circ_origin, float circ_radius) {
 

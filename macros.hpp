@@ -75,3 +75,5 @@
 // Get length of fixed-size (C-style) array
 // be careful! don't use with pointers, only directly with arrays (not std::vectors either)
 #define ARRLEN(arr) (sizeof(arr) / sizeof(arr[0]))
+
+#define TO_STRING(x) #x

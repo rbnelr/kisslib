@@ -53,7 +53,7 @@ public:
 			// at least one page to be committed
 
 			uintptr_t size_needed = (char*)end - (char*)commitptr;
-			size_needed = round_up_pot(size_needed, os_page_size);
+			size_needed = align_up(size_needed, os_page_size);
 
 			commit_pages(commitptr, size_needed);
 
@@ -73,7 +73,7 @@ public:
 		if ((char*)end <= (char*)commitptr - os_page_size) {
 			// at least 1 page to be decommitted
 			
-			char* decommit = (char*)round_up_pot((uintptr_t)end, os_page_size);
+			char* decommit = (char*)align_up((uintptr_t)end, os_page_size);
 			uintptr_t size = (char*)commitptr - decommit; 
 
 			decommit_pages(decommit, size);
