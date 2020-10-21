@@ -41,28 +41,44 @@ namespace kissmath {
 	template <typename T> inline constexpr T is_pot (T x) {
 		return (x & (x - 1)) == 0;
 	}
-
-	inline size_t hash (int3 v) {
+	
+	template <typename X, typename Y>
+	inline size_t hash (X x, Y y) {
 		size_t h;
-		h  = ::std::hash<int>()(v.x);
+		h  = ::std::hash<X>()(x);
 		h = 53ull * (h + 53ull);
-		h += ::std::hash<int>()(v.y);
-		h = 53ull * (h + 53ull);
-		h += ::std::hash<int>()(v.z);
+		h += ::std::hash<Y>()(y);
 		return h;
-	};
-	inline size_t hash (int4 v) {
+	}
+	template <typename X, typename Y, typename Z>
+	inline size_t hash (X x, Y y, Z z) {
 		size_t h;
-		h  = ::std::hash<int>()(v.x);
+		h  = ::std::hash<X>()(x);
 		h = 53ull * (h + 53ull);
-		h += ::std::hash<int>()(v.y);
+		h += ::std::hash<Y>()(y);
 		h = 53ull * (h + 53ull);
-		h += ::std::hash<int>()(v.z);
-		h = 53ull * (h + 53ull);
-		h += ::std::hash<int>()(v.w);
+		h += ::std::hash<Z>()(z);
 		return h;
-	};
-
+	}
+	template <typename X, typename Y, typename Z, typename W>
+	inline size_t hash (X x, Y y, Z z, W w) {
+		size_t h;
+		h  = ::std::hash<X>()(x);
+		h = 53ull * (h + 53ull);
+		h += ::std::hash<Y>()(y);
+		h = 53ull * (h + 53ull);
+		h += ::std::hash<Z>()(z);
+		h = 53ull * (h + 53ull);
+		h += ::std::hash<W>()(w);
+		return h;
+	}
+	
+	inline size_t hash (int3 v) { return hash(v.x, v.y, v.z); };
+	inline size_t hash (int4 v) { return hash(v.x, v.y, v.z, v.w); };
+	
+	inline size_t hash (uint8v3 v) { return hash(v.x, v.y, v.z); };
+	inline size_t hash (uint8v4 v) { return hash(v.x, v.y, v.z, v.w); };
+	
 	// Hashmap key type for vectors
 	template <typename VEC>
 	struct vector_key {
