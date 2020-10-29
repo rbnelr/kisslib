@@ -17,9 +17,8 @@ namespace kiss {
 
 	raw_data load_binary_file (const char* filename, uint64_t* size) {
 		auto f = fopen(filename, "rb");
-		if (!f) {
+		if (!f)
 			return nullptr;
-		}
 
 		uint64_t sz = get_file_size(f);
 		auto data = std::make_unique<byte[]>(sz);
@@ -35,9 +34,8 @@ namespace kiss {
 
 	bool save_binary_file (const char* filename, void const* data, uint64_t size) {
 		auto f = fopen(filename, "wb");
-		if (!f) {
+		if (!f)
 			return false;
-		}
 
 		auto ret = fwrite(data, 1,size, f);
 
@@ -49,7 +47,8 @@ namespace kiss {
 	// returns false on fail (file not found etc.)
 	bool load_text_file (const char* filename, std::string* out) {
 		FILE* f = fopen(filename, "rb"); // read binary because i don't want to convert "\r\n" to "\n"
-		if (!f) return false; // fail
+		if (!f)
+			return false; // fail
 
 		uint64_t file_size = get_file_size(f);
 
@@ -75,25 +74,41 @@ namespace kiss {
 		return save_binary_file(filename, str.data(), str.size());
 	}
 
-	std::string_view get_path (std::string_view filepath, std::string_view* out_filename, char slash) {
-		auto pos = filepath.find_last_of(slash);
-		if (pos == std::string::npos)
-			pos = 0; // no '/' found => '/' is considered to be at position 0
-		else
-			pos += 1;
+	// there is no memrchr in standard c++
+	//  (strrchr does a redundant strlen or is less efficient)
+	//  (memchr returns the first not last occurrance)
+	inline char const* my_memrchr (char const* s, char c, size_t size) {
+		char const* cur = s + size;
+		while (cur != s) {
+			cur--;
+			if (*cur == c)
+				return cur;
+		}
+		return nullptr;
+	}
 
-		if (out_filename) *out_filename = filepath.substr(pos, filepath.size() - pos);
-		return filepath.substr(0, pos);
+	std::string_view get_path (std::string_view filepath, std::string_view* out_filename, char slash) {
+		char const* end = filepath.data() + filepath.size();
+
+		char const* p = my_memrchr(filepath.data(), slash, filepath.size());
+		if (!p) {
+			// no slash found => path is empty, filename is whole input
+			if (out_filename) *out_filename = filepath;
+			return std::string_view(filepath.data(), 0);
+		}
+
+		if (out_filename) *out_filename = std::string_view(p+1, end - (p+1)); // exclude slash from filename
+		return std::string_view(filepath.data(), p+1 - filepath.data()); // include slash in path
 	}
 
 	std::string_view get_ext (std::string_view filepath, std::string_view* out_filename) {
-		auto pos = filepath.find_last_of('.');
-		if (pos == std::string::npos) {
-			if (out_filename) *out_filename = filepath;
-			return filepath.substr(0,0);
-		}
-		
-		if (out_filename) *out_filename = filepath.substr(0, pos);
-		return filepath.substr(pos + 1, filepath.size()); // don't include '.' in ext
+		char const* end = filepath.data() + filepath.size();
+
+		char const* p = my_memrchr(filepath.data(), '.', filepath.size());
+		if (!p)
+			p = filepath.data(); // no splitchar found => left substr is empty
+
+		if (out_filename) *out_filename = std::string_view(filepath.data(), p - filepath.data()); // exclude '.' from filename
+		return std::string_view(p+1, end - (p+1)); // exclude '.' from extension
 	}
 }

@@ -27,7 +27,9 @@ namespace kiss {
 
 	// out_filename is optional
 	// "hello/world.txt" => path: "hello/" out_filename: "world.txt"
-	// "world.txt"       => path:  ""      out_filename: "world.txt"
+	// "world.txt"       => path: ""       out_filename: "world.txt"
+	// "hello/"          => path: "hello/" out_filename: ""
+	// "/"               => path: "/"      out_filename: ""
 	std::string_view get_path (std::string_view filepath, std::string_view* out_filename=nullptr, char slash='/');
 
 	// out_filename is optional

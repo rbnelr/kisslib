@@ -3,7 +3,13 @@
 #include "nlohmann/json.hpp"
 #include "file_io.hpp"
 #include "kissmath.hpp"
+#include <memory>
 using json = nlohmann::ordered_json;
+
+#ifndef SERIALIZE_LOG
+	#include "stdio.h"
+	#define SERIALIZE_LOG(type, ...) fprintf(stderr, __VA_ARGS__)
+#endif
 
 template <typename T>
 bool save (char const* filename, T const& obj) {
@@ -12,12 +18,12 @@ bool save (char const* filename, T const& obj) {
 	try {
 		json_str = json.dump(1, '\t');
 	} catch (std::exception& ex) {
-		clog(ERROR, "Error when serializing something: %s", ex.what());
+		SERIALIZE_LOG(ERROR, "Error when serializing something: %s", ex.what());
 		return true;
 	}
 
 	if (!kiss::save_text_file(filename, json_str)) {
-		clog(ERROR, "Error when serializing something: Can't save file \"%s\"", filename);
+		SERIALIZE_LOG(ERROR, "Error when serializing something: Can't save file \"%s\"", filename);
 		return false;
 	}
 	return true;
@@ -27,14 +33,14 @@ template <typename T>
 bool load (char const* filename, T* obj) {
 	std::string str;
 	if (!kiss::load_text_file(filename, &str)) {
-		clog(WARNING, "Can't load file \"%s\", using defaults.", filename);
+		SERIALIZE_LOG(WARNING, "Can't load file \"%s\", using defaults.", filename);
 		return false;
 	}
 	try {
 		json json = json::parse(str);
 		*obj = json.get<T>();
 	} catch (std::exception& ex) {
-		clog(ERROR, "Error when deserializing something: %s", ex.what());
+		SERIALIZE_LOG(ERROR, "Error when deserializing something: %s", ex.what());
 		return false;
 	}
 	return true;
@@ -44,14 +50,14 @@ template <typename T>
 bool load_overwrite (char const* filename, T* obj) {
 	std::string str;
 	if (!kiss::load_text_file(filename, &str)) {
-		clog(WARNING, "Can't load file \"%s\", using defaults.", filename);
+		SERIALIZE_LOG(WARNING, "Can't load file \"%s\", using defaults.", filename);
 		return false;
 	}
 	try {
 		json json = json::parse(str);
 		json.get_to<T>(*obj);
 	} catch (std::exception& ex) {
-		clog(ERROR, "Error when deserializing something: %s", ex.what());
+		SERIALIZE_LOG(ERROR, "Error when deserializing something: %s", ex.what());
 		return false;
 	}
 	return true;
@@ -103,6 +109,18 @@ T load (char const* filename) {
     void from_json(const nlohmann::ordered_json& j, Type& t) { _JSON_EXPAND(_JSON_PASTE(_JSON_FROM, __VA_ARGS__)) }
 
 namespace nlohmann {
+	template<typename T>
+	struct adl_serializer<std::unique_ptr<T>> {
+		using type = std::unique_ptr<T>;
+		static void to_json(ordered_json& j, const type& val) {
+			j = *val;
+		}
+		static void from_json(const ordered_json& j, type& val) {
+			val = std::make_unique<T>();
+			j.get_to(*val);
+		}
+	};
+	
 	template <>	struct adl_serializer<int2> {
 		using type = int2;
 		static void to_json(ordered_json& j, const type& val) {
@@ -199,3 +217,5 @@ namespace nlohmann {
 		}
 	};
 }
+
+#undef SERIALIZE_LOG
