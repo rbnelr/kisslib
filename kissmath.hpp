@@ -73,32 +73,29 @@ namespace kissmath {
 		return h;
 	}
 	
+	inline size_t hash (int2 v) { return hash(v.x, v.y); };
 	inline size_t hash (int3 v) { return hash(v.x, v.y, v.z); };
 	inline size_t hash (int4 v) { return hash(v.x, v.y, v.z, v.w); };
-	
+
+	inline size_t hash (float2 v) { return hash(v.x, v.y); };
+	inline size_t hash (float3 v) { return hash(v.x, v.y, v.z); };
+	inline size_t hash (float4 v) { return hash(v.x, v.y, v.z, v.w); };
+
+	inline size_t hash (uint8v2 v) { return hash(v.x, v.y); };
 	inline size_t hash (uint8v3 v) { return hash(v.x, v.y, v.z); };
 	inline size_t hash (uint8v4 v) { return hash(v.x, v.y, v.z, v.w); };
-	
-	// Hashmap key type for vectors
-	template <typename VEC>
-	struct vector_key {
-		VEC v;
-
-		vector_key (VEC const& v): v{v} {}
-		bool operator== (vector_key<VEC> const& r) const {
-			return equal(v, r.v);
-		}
-	};
 }
 
 namespace std {
-	template <typename VEC>
-	struct hash<kissmath::vector_key<VEC>> {
-		size_t operator() (kissmath::vector_key<VEC> const& v) const {
-			return kissmath::hash(v.v);
-		}
-	};
+	template<> struct hash<kissmath::int2   > { size_t operator() (kissmath::int2    const& x) const { return kissmath::hash(x); } };
+	template<> struct hash<kissmath::int3   > { size_t operator() (kissmath::int3    const& x) const { return kissmath::hash(x); } };
+	template<> struct hash<kissmath::int4   > { size_t operator() (kissmath::int4    const& x) const { return kissmath::hash(x); } };
+	template<> struct hash<kissmath::float2 > { size_t operator() (kissmath::float2  const& x) const { return kissmath::hash(x); } };
+	template<> struct hash<kissmath::float3 > { size_t operator() (kissmath::float3  const& x) const { return kissmath::hash(x); } };
+	template<> struct hash<kissmath::float4 > { size_t operator() (kissmath::float4  const& x) const { return kissmath::hash(x); } };
+	template<> struct hash<kissmath::uint8v2> { size_t operator() (kissmath::uint8v2 const& x) const { return kissmath::hash(x); } };
+	template<> struct hash<kissmath::uint8v3> { size_t operator() (kissmath::uint8v3 const& x) const { return kissmath::hash(x); } };
+	template<> struct hash<kissmath::uint8v4> { size_t operator() (kissmath::uint8v4 const& x) const { return kissmath::hash(x); } };
 }
 
 using namespace kissmath;
-
