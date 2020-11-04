@@ -6,7 +6,6 @@
 #include <vector>
 
 #ifdef TRACY_ENABLE
-	
 	#include "Tracy.hpp"
 	
 	// Need to wrap locks for tracy
@@ -15,15 +14,12 @@
 
 	#define UNIQUE_LOCK			std::unique_lock<LockableBase(std::mutex)> lock(m)
 	#define LOCK_GUARD			std::lock_guard<LockableBase(std::mutex)> lock(m)
-	
 #else
-	
 	#define MUTEX				std::mutex m
 	#define CONDITION_VARIABLE	std::condition_variable_any	c
 
 	#define UNIQUE_LOCK			std::unique_lock lock(m)
 	#define LOCK_GUARD			std::lock_guard lock(m)
-	
 #endif
 
 // based on https://stackoverflow.com/questions/15278343/c11-thread-safe-queue

@@ -48,7 +48,7 @@ uint32_t _bsr_0 (uint64_t val) {
 	return idx;
 }
 
-int Bitset::bitscan_forward_1 (int start) {
+int BitsetAllocator::scan_forward_free (int start) {
 	int count = (int)bits.size();
 	int i = start;
 	while (i < count) {
@@ -58,7 +58,7 @@ int Bitset::bitscan_forward_1 (int start) {
 	}
 	return count << 6;
 }
-int Bitset::bitscan_reverse_0 () {
+int BitsetAllocator::scan_reverse_allocated () {
 	int count = (int)bits.size();
 	int i = count -1;
 	while (i >= 0) {
@@ -69,9 +69,9 @@ int Bitset::bitscan_reverse_0 () {
 	return -1;
 }
 
-int Bitset::clear_first_1 () {
+int BitsetAllocator::alloc () {
 	// get the index to return, which we already know is the lowest set bit
-	int idx = first_set;
+	int idx = first_free;
 
 	// append to bits if needed
 	if (idx == ((int)bits.size() << 6))
@@ -82,20 +82,20 @@ int Bitset::clear_first_1 () {
 	bits[idx >> 6] &= ~(1ull << (idx & 0b111111u));
 
 	// scan for next set bit for next call, can skip all bits before first_set, since we know they are 0
-	first_set = bitscan_forward_1(first_set >> 6);
+	first_free = scan_forward_free(first_free >> 6);
 
 	return idx;
 }
-void Bitset::set_bit (int idx) {
+void BitsetAllocator::free (int idx) {
 	// set bit in freeset to 1
 	bits[idx >> 6] |= 1ull << (idx & 0b111111u);
 
 	// shrink bits if there are contiguous zero ints at the end
 	if ((idx >> 6) == (int)bits.size()-1) {
-		while (bits.back() == ONES)
+		while (!bits.empty() && bits.back() == ONES)
 			bits.pop_back();
 	}
 
 	// keep first_set up to date
-	first_set = std::min(first_set, idx);
+	first_free = std::min(first_free, idx);
 }
