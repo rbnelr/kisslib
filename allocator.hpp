@@ -97,19 +97,12 @@ public:
 // Bitset used for block-based allocators to find the lowest free (1) bit in a fast way
 struct BitsetAllocator {
 	std::vector<uint64_t>	bits;
-	int						first_free = 0; // index of first set bit in bits, to possibly speed up scanning
+	uint32_t				first_free = 0; // index of first free (1) bit in bits, to speed up alloc
+	uint32_t				alloc_end = 0; // index of the free region of 1 bits starting after the last allocated (0) bit, to speed up paging for users
 
 	// finds the first free (1) bit and clears it, returns the index of the bit
-	int alloc ();
+	uint32_t alloc ();
 
 	// free an allocated block by setting a allocated (0) bit, safe to set bit that's already set
-	void free (int idx);
-
-	// get index of first free (1) bit, starting at some point in the array
-	// returns one past end of array if no free (1) bit found, because that one needs to be the next one allocated
-	int scan_forward_free (int start=0);
-
-	// get index of last allocated (0) bit
-	// returns -1 if not 0 bits are found, because all bits can be freed
-	int scan_reverse_allocated ();
+	void free (uint32_t idx);
 };

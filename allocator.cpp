@@ -48,9 +48,10 @@ uint32_t _bsr_0 (uint64_t val) {
 	return idx;
 }
 
-int BitsetAllocator::scan_forward_free (int start) {
-	int count = (int)bits.size();
-	int i = start;
+// get index of first free (1) bit, starting at some point in the array
+// returns one past end of array if no free (1) bit found, because that one needs to be the next one allocated
+uint32_t scan_forward_free (uint64_t* bits, uint32_t count, uint32_t start) {
+	uint32_t i = start;
 	while (i < count) {
 		if (bits[i] != 0ull)
 			return (i << 6) + _bsf_1(bits[i]);
@@ -58,44 +59,57 @@ int BitsetAllocator::scan_forward_free (int start) {
 	}
 	return count << 6;
 }
-int BitsetAllocator::scan_reverse_allocated () {
-	int count = (int)bits.size();
-	int i = count -1;
-	while (i >= 0) {
+
+// get index of last allocated (0) bit plus 1
+// returns 0 if no 0 bits are found, because all bits can be freed
+uint32_t scan_reverse_allocated (uint64_t* bits, uint32_t start) {
+	uint32_t i = start;
+	for (;;) {
 		if (bits[i] != ONES)
-			return (i << 6) + _bsr_0(bits[i]);
+			return (i << 6) + _bsr_0(bits[i]) + 1;
+		if (i == 0) break;
 		--i;
 	}
-	return -1;
+	return 0;
 }
 
-int BitsetAllocator::alloc () {
-	// get the index to return, which we already know is the lowest set bit
-	int idx = first_free;
+uint32_t BitsetAllocator::alloc () {
+	// alloc at the cached first_free index
+	uint32_t idx = first_free;
 
 	// append to bits if needed
-	if (idx == ((int)bits.size() << 6))
+	if (idx == ((uint32_t)bits.size() << 6))
 		bits.push_back(ONES);
 
 	// clear bit
 	assert(bits[idx >> 6] & (1ull << (idx & 0b111111u)));
 	bits[idx >> 6] &= ~(1ull << (idx & 0b111111u));
 
-	// scan for next set bit for next call, can skip all bits before first_set, since we know they are 0
-	first_free = scan_forward_free(first_free >> 6);
+	// update first_free by scanning to right for next free bit, skips bits before current first_free
+	first_free = scan_forward_free(bits.data(), (uint32_t)bits.size(), first_free >> 6);
+
+	// update alloc_end
+	alloc_end = std::max(idx+1, alloc_end);
 
 	return idx;
 }
-void BitsetAllocator::free (int idx) {
+void BitsetAllocator::free (uint32_t idx) {
+	assert(alloc_end > 0);
+
 	// set bit in freeset to 1
 	bits[idx >> 6] |= 1ull << (idx & 0b111111u);
-
-	// shrink bits if there are contiguous zero ints at the end
-	if ((idx >> 6) == (int)bits.size()-1) {
-		while (!bits.empty() && bits.back() == ONES)
-			bits.pop_back();
+	
+	if (idx >= alloc_end-1) {
+		assert(idx == alloc_end-1);
+		// update alloc_end by scanning to left for next allocated bit, skips bits after current first_free
+		alloc_end = scan_reverse_allocated(bits.data(), (alloc_end-1) >> 6);
+		
+		// shrink bits if there are contiguous zero ints at the end
+		uint32_t needed_bits = alloc_end >> 6; 
+		if (needed_bits < (uint32_t)bits.size())
+			bits.resize(needed_bits);
 	}
 
-	// keep first_set up to date
+	// update first_set
 	first_free = std::min(first_free, idx);
 }
