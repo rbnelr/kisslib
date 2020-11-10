@@ -105,7 +105,7 @@ void BitsetAllocator::free (uint32_t idx) {
 		alloc_end = scan_reverse_allocated(bits.data(), (alloc_end-1) >> 6);
 		
 		// shrink bits if there are contiguous zero ints at the end
-		uint32_t needed_bits = alloc_end >> 6; 
+		uint32_t needed_bits = ((alloc_end-1) >> 6) + 1; 
 		if (needed_bits < (uint32_t)bits.size())
 			bits.resize(needed_bits);
 	}
