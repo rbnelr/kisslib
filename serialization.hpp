@@ -12,7 +12,9 @@ using json = nlohmann::ordered_json;
 #endif
 
 template <typename T>
-bool save (char const* filename, T const& obj) {
+inline bool save (char const* filename, T const& obj) {
+	ZoneScoped;
+
 	json json = obj;
 	std::string json_str;
 	try {
@@ -29,42 +31,63 @@ bool save (char const* filename, T const& obj) {
 	return true;
 }
 
-template <typename T>
-bool load (char const* filename, T* obj) {
+inline bool load_json (char const* filename, json* j) {
+	ZoneScoped;
+
 	std::string str;
 	if (!kiss::load_text_file(filename, &str)) {
-		SERIALIZE_LOG(WARNING, "Can't load file \"%s\", using defaults.", filename);
+		SERIALIZE_LOG(WARNING, "[load_json] Can't load file \"%s\", using defaults.", filename);
 		return false;
 	}
 	try {
-		json json = json::parse(str);
-		*obj = json.get<T>();
+		*j = json::parse(str);
 	} catch (std::exception& ex) {
-		SERIALIZE_LOG(ERROR, "Error when deserializing something: %s", ex.what());
+		SERIALIZE_LOG(ERROR, "[load_json] Error in json::parse: %s", ex.what());
 		return false;
 	}
 	return true;
 }
 
-template <typename T>
-bool load_overwrite (char const* filename, T* obj) {
-	std::string str;
-	if (!kiss::load_text_file(filename, &str)) {
-		SERIALIZE_LOG(WARNING, "Can't load file \"%s\", using defaults.", filename);
-		return false;
-	}
-	try {
-		json json = json::parse(str);
-		json.get_to<T>(*obj);
-	} catch (std::exception& ex) {
-		SERIALIZE_LOG(ERROR, "Error when deserializing something: %s", ex.what());
-		return false;
-	}
-	return true;
+inline json load_json (char const* filename) {
+	json j;
+	load_json(filename, &j);
+	return std::move(j);
 }
 
 template <typename T>
-T load (char const* filename) {
+inline bool load (char const* filename, T* obj) {
+	ZoneScoped;
+
+	try {
+		json json;
+		if (load_json(filename, &json)) {
+			*obj = json.get<T>();
+			return true;
+		}
+	} catch (std::exception& ex) {
+		SERIALIZE_LOG(ERROR, "Error when deserializing something: %s", ex.what());
+	}
+	return false;
+}
+
+template <typename T>
+inline bool load_overwrite (char const* filename, T* obj) {
+	ZoneScoped;
+
+	try {
+		json json;
+		if (load_json(filename, &json)) {
+			json.get_to(*obj);
+			return true;
+		}
+	} catch (std::exception& ex) {
+		SERIALIZE_LOG(ERROR, "Error when deserializing something: %s", ex.what());
+	}
+	return false;
+}
+
+template <typename T>
+inline T load (char const* filename) {
 	T t = T();
 	load(filename, &t);
 	return t;
