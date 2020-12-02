@@ -42,48 +42,68 @@ namespace kissmath {
 		return (x & (x - 1)) == 0;
 	}
 	
-	template <typename X, typename Y>
-	inline size_t hash (X x, Y y) {
-		size_t h;
-		h  = ::std::hash<X>()(x);
-		h = 53ull * (h + 53ull);
-		h += ::std::hash<Y>()(y);
-		return h;
-	}
-	template <typename X, typename Y, typename Z>
-	inline size_t hash (X x, Y y, Z z) {
-		size_t h;
-		h  = ::std::hash<X>()(x);
-		h = 53ull * (h + 53ull);
-		h += ::std::hash<Y>()(y);
-		h = 53ull * (h + 53ull);
-		h += ::std::hash<Z>()(z);
-		return h;
-	}
-	template <typename X, typename Y, typename Z, typename W>
-	inline size_t hash (X x, Y y, Z z, W w) {
-		size_t h;
-		h  = ::std::hash<X>()(x);
-		h = 53ull * (h + 53ull);
-		h += ::std::hash<Y>()(y);
-		h = 53ull * (h + 53ull);
-		h += ::std::hash<Z>()(z);
-		h = 53ull * (h + 53ull);
-		h += ::std::hash<W>()(w);
-		return h;
-	}
-	
-	inline size_t hash (int2 v) { return hash(v.x, v.y); };
-	inline size_t hash (int3 v) { return hash(v.x, v.y, v.z); };
-	inline size_t hash (int4 v) { return hash(v.x, v.y, v.z, v.w); };
+	// from https://github.com/aappleby/smhasher/blob/master/src/MurmurHash1.cpp
+	inline uint32_t MurmurHash1_32 (uint32_t const* key, int len) {
+		constexpr uint32_t m = 0xc6a4a793;
 
-	inline size_t hash (float2 v) { return hash(v.x, v.y); };
-	inline size_t hash (float3 v) { return hash(v.x, v.y, v.z); };
-	inline size_t hash (float4 v) { return hash(v.x, v.y, v.z, v.w); };
+		//uint32_t h = seed ^ (len * m);
+		uint32_t h = 0;
 
-	inline size_t hash (uint8v2 v) { return hash(v.x, v.y); };
-	inline size_t hash (uint8v3 v) { return hash(v.x, v.y, v.z); };
-	inline size_t hash (uint8v4 v) { return hash(v.x, v.y, v.z, v.w); };
+		for (int i=0; i<len; ++i) {
+			h += key[i];
+			h *= m;
+			h ^= h >> 16;
+		}
+
+		h *= m;
+		h ^= h >> 10;
+		h *= m;
+		h ^= h >> 17;
+
+		return h;
+	}
+	inline uint32_t MurmurHash1_8 (uint8_t const* key, int len) {
+		constexpr uint32_t m = 0xc6a4a793;
+
+		//uint32_t h = seed ^ (len * m);
+		uint32_t h = 0;
+
+		for (int i=0; i<len; i += 4) {
+			h += *(uint32_t*)(key + i);
+			h *= m;
+			h ^= h >> 16;
+		}
+
+		switch(len) {
+			case 3:
+				h += (uint32_t)key[2] << 16;
+			case 2:
+				h += (uint32_t)key[1] << 8;
+			case 1:
+				h += (uint32_t)key[0];
+				h *= m;
+				h ^= h >> 16;
+		};
+
+		h *= m;
+		h ^= h >> 10;
+		h *= m;
+		h ^= h >> 17;
+
+		return h;
+	} 
+
+	inline size_t hash (int2 const& v) { return MurmurHash1_32((uint32_t*)&v.x, 2); };
+	inline size_t hash (int3 const& v) { return MurmurHash1_32((uint32_t*)&v.x, 3); };
+	inline size_t hash (int4 const& v) { return MurmurHash1_32((uint32_t*)&v.x, 4); };
+
+	inline size_t hash (float2 const& v) { return MurmurHash1_32((uint32_t*)&v.x, 2); };
+	inline size_t hash (float3 const& v) { return MurmurHash1_32((uint32_t*)&v.x, 3); };
+	inline size_t hash (float4 const& v) { return MurmurHash1_32((uint32_t*)&v.x, 4); };
+
+	inline size_t hash (uint8v2 const& v) { return MurmurHash1_8(&v.x, 2); };
+	inline size_t hash (uint8v3 const& v) { return MurmurHash1_8(&v.x, 3); };
+	inline size_t hash (uint8v4 const& v) { return MurmurHash1_8(&v.x, 4); };
 }
 
 namespace std {
