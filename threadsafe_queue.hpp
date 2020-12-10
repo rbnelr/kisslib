@@ -4,6 +4,7 @@
 #include <condition_variable>
 #include <algorithm>
 #include <vector>
+#include "stl_extensions.hpp"
 
 #ifdef TRACY_ENABLE
 	#include "Tracy.hpp"
@@ -119,7 +120,7 @@ public:
 
 	// wait until min elements are available, then dequeue all elements
 	// returns the number of elements dequeued
-	size_t pop_all_wait (std::vector<T>* output, size_t min) {
+	size_t pop_all_wait (std_vector<T>* output, size_t min) {
 		UNIQUE_LOCK;
 
 		while (q.size() < min) {
@@ -139,7 +140,7 @@ public:
 
 	// dequeue all elements (including none); never waits
 	// returns the number of elements dequeued
-	size_t pop_all (std::vector<T>* output) {
+	size_t pop_all (std_vector<T>* output) {
 		LOCK_GUARD;
 
 		size_t count = q.size();

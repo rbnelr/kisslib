@@ -35,19 +35,12 @@ void set_thread_preferred_core (int core_index);
 // allows for easy overview of threads in debugger
 void set_thread_description (std::string_view description);
 
-struct ThreadingJob {
-	virtual ~ThreadingJob () {};
-
-	// code to execute on other thread
-	virtual void execute () = 0;
-	// code to execute on main thread after execute was called
-	virtual void finalize () = 0;
-};
-
-// threadpool
+// Job threadpool
 // threadpool.push(Job) to queue a job for execution on a thread
-// threads call Job.execute() and push the return value into threadpool.results
+// threads call Job.execute() and std::move() the return value into threadpool.results
 // threadpool.try_pop() to get results
+// jobs and job results should be default constructable and small and moveable
+template <typename JOB>
 class Threadpool {
 	NO_MOVE_COPY_CLASS(Threadpool)
 
@@ -60,9 +53,12 @@ class Threadpool {
 		set_thread_description(thread_name);
 
 		// Wait for one job to pop and execute or until shutdown signal is sent via jobs.shutdown()
-		std::unique_ptr<ThreadingJob> job;
-		while (jobs.pop_or_shutdown_wait(&job) != decltype(jobs)::SHUTDOWN) {
-			job->execute();
+		for (;;) {
+			JOB job;
+			if (jobs.pop_or_shutdown_wait(&job) == decltype(jobs)::SHUTDOWN)
+				return;
+
+			job.execute();
 			results.push(std::move(job));
 		}
 	}
@@ -72,9 +68,9 @@ class Threadpool {
 
 public:
 	// jobs.push(Job) to queue work to be executed by a thread
-	ThreadsafeQueue< std::unique_ptr<ThreadingJob> >	jobs;
+	ThreadsafeQueue<JOB> jobs;
 	// jobs.try_pop(Job) to dequeue the results of the jobs
-	ThreadsafeQueue< std::unique_ptr<ThreadingJob> >	results;
+	ThreadsafeQueue<JOB> results;
 
 	// don't start threads
 	Threadpool () {}
@@ -118,9 +114,12 @@ public:
 		THREADPOOL_PROFILER_SCOPED("Threadpool::contribute_work");
 
 		// Wait for one job to pop and execute or until shutdown signal is sent via jobs.shutdown()
-		std::unique_ptr<ThreadingJob> job;
-		while (jobs.try_pop(&job)) {
-			job->execute();
+		for (;;) {
+			JOB job;
+			if (!jobs.try_pop(&job))
+				return;
+
+			job.execute();
 			results.push(std::move(job));
 		}
 	}

@@ -3,7 +3,7 @@
 #include "macros.hpp"
 #include "assert.h"
 #include <vector>
-#include <string>
+#include "stl_extensions.hpp"
 
 /*
 	Allocators implemented using OS-level virtual memory
@@ -29,13 +29,13 @@
 #ifdef TRACY_ENABLE
 	#include "Tracy.hpp"
 
-	#define ALLOCATOR_PROFILE_SCOPED(name) ZoneScopedN(name)
+	#define ALLOCATOR_PROFILE_SCOPED(name) ZoneScopedNC(name, tracy::Color::Crimson)
 	#define ALLOCATOR_PROFILE_ALLOC(ptr, size) TracyAlloc(ptr, size)
-	#define ALLOCATOR_PROFILE_FREE(ptr, size) TracyFree(ptr)
+	#define ALLOCATOR_PROFILE_FREE(ptr) TracyFree(ptr)
 #else
 	#define ALLOCATOR_PROFILE_SCOPED(name)
 	#define ALLOCATOR_PROFILE_ALLOC(ptr, size)
-	#define ALLOCATOR_PROFILE_FREE(ptr, size)
+	#define ALLOCATOR_PROFILE_FREE(ptr)
 #endif
 
 uint32_t get_os_page_size ();
@@ -169,7 +169,7 @@ inline uint32_t scan_reverse_allocated (uint64_t* bits, uint32_t start) {
 }
 
 struct AllocatorBitset {
-	std::vector<uint64_t>	bits;
+	std_vector<uint64_t>	bits;
 	uint32_t				first_free = 0; // index of first free (1) bit in bits, to speed up alloc
 	uint32_t				alloc_end = 0; // index of the free region of 1 bits starting after the last allocated (0) bit, to speed up paging for users
 	uint32_t				count = 0; // index of the free region of 1 bits starting after the last allocated (0) bit, to speed up paging for users
