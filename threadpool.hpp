@@ -7,9 +7,9 @@
 #ifdef TRACY_ENABLE
 	#include "Tracy.hpp"
 	
-	#define TRACY_ZoneScoped ZoneScoped
+	#define THREADPOOL_PROFILER_SCOPED(name) ZoneScopedN(name)
 #else
-	#define TRACY_ZoneScoped
+	#define THREADPOOL_PROFILER_SCOPED(name)
 #endif
 
 // std::thread::hardware_concurrency() gets the number of cpu threads
@@ -85,7 +85,7 @@ public:
 
 	// start thread_count threads
 	void start_threads (int thread_count, ThreadPriority prio=ThreadPriority::LOW, std::string thread_base_name="<threadpool>") {
-		TRACY_ZoneScoped;
+		THREADPOOL_PROFILER_SCOPED("Threadpool::start_threads");
 		
 		// Threadpools are ideally used with  thread_count <= cpu_core_count  to make use of the cpu without the threads preempting each other (although I don't check the thread count)
 		// I'm just assuming for now that with  high_prio==false -> thread_count==cpu_core_count -> ie. set each threads affinity to one of the cores
@@ -115,7 +115,7 @@ public:
 				res = threadpool.results.pop()
 	*/
 	void contribute_work () {
-		TRACY_ZoneScoped;
+		THREADPOOL_PROFILER_SCOPED("Threadpool::contribute_work");
 
 		// Wait for one job to pop and execute or until shutdown signal is sent via jobs.shutdown()
 		std::unique_ptr<ThreadingJob> job;
@@ -127,7 +127,7 @@ public:
 
 	// optional manual shutdown
 	void shutdown () {
-		TRACY_ZoneScoped;
+		THREADPOOL_PROFILER_SCOPED("Threadpool::shutdown");
 
 		if (!threads.empty())
 			jobs.shutdown(); // set shutdown to all threads
