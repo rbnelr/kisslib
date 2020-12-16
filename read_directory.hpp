@@ -64,10 +64,12 @@ namespace kiss {
 			}
 			return FILECHANGE_NONE;
 		}
-		inline file_change_e contains_any (std::vector<std::string> const& filenames, file_change_e filter=FILECHANGE_NONE) {
+		inline file_change_e contains_any (std::vector<std::string> const& filenames, file_change_e filter=FILECHANGE_NONE, std::string const** out_file=nullptr) {
 			for (auto& file : files) {
 				for (auto& caller_file : filenames) {
 					if (file.filename == caller_file && (filter == FILECHANGE_NONE || (file.changes & filter) != 0)) {
+						if (out_file)
+							*out_file = &caller_file;
 						return file.changes;
 					}
 				}
