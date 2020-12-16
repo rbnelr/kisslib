@@ -227,7 +227,7 @@ namespace kiss {
 
 					std::string filepath = wchar_to_utf8(info->FileName);
 
-				#if 1
+				#if 0
 					const char* action_str = nullptr;
 					switch (info->Action) {
 						case FILE_ACTION_ADDED:				action_str = "FILE_ACTION_ADDED             ";	break;
@@ -263,6 +263,11 @@ namespace kiss {
 								// tilde characters are often used for temporary files, for ex. MSVC writes source code changes by creating a temp file with a tilde in it's name and then swaps the old and new file by renaming them
 								//  so filter those files here since the user of Directory_Watcher _probably_ does not want those files
 							} else {
+
+								// replace '\' with '/' to enable simple string comparisons on the results (I try to use '/' everywhere)
+								for (size_t i=0; i<filepath.size(); ++i)
+									if (filepath[i] == '\\') filepath[i] = '/';
+
 								changed_files.files.push_back({ std::move(filepath), type });
 							}
 						} break;
