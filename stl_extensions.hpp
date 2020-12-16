@@ -7,9 +7,9 @@
 #ifdef TRACY_ENABLE
 	#include "Tracy.hpp"
 
-	#define ALLOCATOR_PROFILE_SCOPED(name) ZoneScopedNC(name, tracy::Color::Crimson)
-	#define ALLOCATOR_PROFILE_ALLOC(ptr, size) TracyAlloc(ptr, size)
-	#define ALLOCATOR_PROFILE_FREE(ptr) TracyFree(ptr)
+	#define STL_PROFILE_SCOPED(name) ZoneScopedNC(name, tracy::Color::Crimson)
+	#define STL_PROFILE_ALLOC(ptr, size) TracyAlloc(ptr, size)
+	#define STL_PROFILE_FREE(ptr) TracyFree(ptr)
 
 	inline void* _malloc (std::size_t size) {
 		ALLOCATOR_PROFILE_SCOPED("malloc");
@@ -31,11 +31,11 @@
 
 		T* allocate (std::size_t n) {
 			T* ptr = (T*)_malloc(n * sizeof(T));
-			ALLOCATOR_PROFILE_ALLOC(ptr, n * sizeof(T));
+			STL_PROFILE_ALLOC(ptr, n * sizeof(T));
 			return ptr;
 		}
 		void deallocate (T* ptr, std::size_t n) {
-			ALLOCATOR_PROFILE_FREE(ptr);
+			STL_PROFILE_FREE(ptr);
 			_free(ptr);
 		}
 	};
@@ -53,10 +53,6 @@
 	template <typename Key, typename T, typename Hash = std::hash<Key>, typename Pred = std::equal_to<Key>>
 	using std_unordered_map = std::unordered_map<Key, T, Hash, Pred, TracySTLAllocator<std::pair<const Key, T>>>;
 #else
-	#define ALLOCATOR_PROFILE_SCOPED(name)
-	#define ALLOCATOR_PROFILE_ALLOC(ptr, size)
-	#define ALLOCATOR_PROFILE_FREE(ptr, size)
-
 	template <typename T>
 	using std_vector = std::vector<T>;
 
