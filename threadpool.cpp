@@ -18,13 +18,22 @@
 	// 
 	//  HIGH_PRIORITY_CLASS + THREAD_PRIORITY_HIGHEST caused input processing to lag (mouse lag) when 100% cpu
 	void set_thread_priority (ThreadPriority prio) {
-		auto ret = SetThreadPriority(GetCurrentThread(), prio == ThreadPriority::HIGH ? THREAD_PRIORITY_HIGHEST : THREAD_PRIORITY_LOWEST);
+		int wprio = THREAD_PRIORITY_NORMAL;
+
+		switch (prio) {
+			case ThreadPriority::LOW:			wprio = THREAD_PRIORITY_LOWEST;			break;
+			case ThreadPriority::NORMAL:		wprio = THREAD_PRIORITY_NORMAL;			break;
+			case ThreadPriority::ABOVE_NORMAL:	wprio = THREAD_PRIORITY_ABOVE_NORMAL;	break;
+			case ThreadPriority::HIGH:			wprio = THREAD_PRIORITY_HIGHEST;		break;
+		}
+
+		auto ret = SetThreadPriority(GetCurrentThread(), wprio);
 		assert(ret != 0);
 	}
 
 	void set_thread_preferred_core (int preferred_core) {
-		auto ret = SetThreadIdealProcessor(GetCurrentThread(), preferred_core);
-		assert(ret >= 0);
+		//auto ret = SetThreadIdealProcessor(GetCurrentThread(), preferred_core);
+		//assert(ret >= 0);
 	}
 
 	void set_thread_description (std::string_view description) {

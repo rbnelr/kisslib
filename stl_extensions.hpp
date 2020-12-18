@@ -12,11 +12,11 @@
 	#define STL_PROFILE_FREE(ptr) TracyFree(ptr)
 
 	inline void* _malloc (std::size_t size) {
-		ALLOCATOR_PROFILE_SCOPED("malloc");
+		STL_PROFILE_SCOPED("malloc");
 		return std::malloc(size);
 	}
 	inline void _free (void* ptr) {
-		ALLOCATOR_PROFILE_SCOPED("free");
+		STL_PROFILE_SCOPED("free");
 		std::free(ptr);
 	}
 

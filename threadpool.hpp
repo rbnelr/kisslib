@@ -20,6 +20,8 @@ void set_process_priority ();
 
 enum class ThreadPriority {
 	LOW,
+	NORMAL,
+	ABOVE_NORMAL,
 	HIGH,
 };
 
