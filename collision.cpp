@@ -56,11 +56,58 @@ bool plane_cull_aabb (Plane const& plane, AABB aabb) {
 	return true;
 }
 
-bool frustrum_cull_aabb (View_Frustrum const& frust, AABB aabb) {
+//bool frustrum_cull_aabb (View_Frustrum const& frust, AABB aabb) {
+//	// cull if outside of one plane
+//	for (int i=0; i<5; ++i) {
+//		if (plane_cull_aabb(frust.planes[i], aabb))
+//			return true;
+//	}
+//	return false;
+//}
+
+bool frustrum_cull_aabb (View_Frustrum const& frust, float lx, float ly, float lz, float hx, float hy, float hz) {
+	//// Optimized version
+
 	// cull if outside of one plane
-	for (int i=0; i<6; ++i) {
-		if (plane_cull_aabb(frust.planes[i], aabb))
-			return true;
+	for (int i=0; i<5; ++i) {
+		auto& plane = frust.planes[i];
+
+		// parts of the dot products
+		float dlx = plane.normal.x * (lx - plane.pos.x);
+		float dly = plane.normal.y * (ly - plane.pos.y);
+		float dlz = plane.normal.z * (lz - plane.pos.z);
+		float dhx = plane.normal.x * (hx - plane.pos.x);
+		float dhy = plane.normal.y * (hy - plane.pos.y);
+		float dhz = plane.normal.z * (hz - plane.pos.z);
+
+	#if 0
+		//if ((dlx + dly + dlz) <= 0) continue;
+		//if ((dhx + dly + dlz) <= 0) continue;
+		//if ((dlx + dhy + dlz) <= 0) continue;
+		//if ((dhx + dhy + dlz) <= 0) continue;
+		//if ((dlx + dly + dhz) <= 0) continue;
+		//if ((dhx + dly + dhz) <= 0) continue;
+		//if ((dlx + dhy + dhz) <= 0) continue;
+		//if ((dhx + dhy + dhz) <= 0) continue;
+
+		return true; // aabb completely outside plane
+	#else
+		float a = (dlx + dly + dlz);
+		float b = (dhx + dly + dlz);
+		float c = (dlx + dhy + dlz);
+		float d = (dhx + dhy + dlz);
+		float e = (dlx + dly + dhz);
+		float f = (dhx + dly + dhz);
+		float g = (dlx + dhy + dhz);
+		float h = (dhx + dhy + dhz);
+
+	#define MIN(a,b) kissmath::min(a,b)
+		float least = MIN( MIN(MIN(a,b), MIN(c,d)), MIN(MIN(e,f), MIN(g,h)) );
+	#undef MIN
+
+		if (least > 0)
+			return true;// true: aabb completely outside plane
+	#endif
 	}
 	return false;
 }

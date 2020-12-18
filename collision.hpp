@@ -43,7 +43,11 @@ float point_box_nearest_dist (float3 box_pos, float3 box_size, float3 point);
 
 // cull (return true) if AABB is completely outside of one of the view frustrums planes
 // this cull 99% of the AABB that are invisible, but returns a false negative sometimes
-bool frustrum_cull_aabb (View_Frustrum const& frust, AABB aabb);
+bool frustrum_cull_aabb (View_Frustrum const& frust, float lx, float ly, float lz, float hx, float hy, float hz);
+
+inline bool frustrum_cull_aabb (View_Frustrum const& frust, AABB aabb) {
+	return frustrum_cull_aabb(frust, aabb.lo.x, aabb.lo.y, aabb.lo.z, aabb.hi.x, aabb.hi.y, aabb.hi.z);
+}
 
 typedef int voxel_coord_t;
 typedef int3 voxel_coord;
