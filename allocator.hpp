@@ -172,8 +172,7 @@ struct AllocatorBitset {
 	std_vector<uint64_t>	bits;
 	uint32_t				first_free = 0; // index of first free (1) bit in bits, to speed up alloc
 	uint32_t				alloc_end = 0; // index of the free region of 1 bits starting after the last allocated (0) bit, to speed up paging for users
-	uint32_t				count = 0; // index of the free region of 1 bits starting after the last allocated (0) bit, to speed up paging for users
-
+	
 	// finds the first free (1) bit and sets it to 0, returns the index of the slot
 	uint32_t alloc () {
 		// alloc at the cached first_free index

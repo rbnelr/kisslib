@@ -56,11 +56,11 @@ class Threadpool {
 
 		// Wait for one job to pop and execute or until shutdown signal is sent via jobs.shutdown()
 		for (;;) {
-			JOB job;
+			std::unique_ptr<JOB> job;
 			if (jobs.pop_or_shutdown_wait(&job) == decltype(jobs)::SHUTDOWN)
 				return;
 
-			job.execute();
+			job->execute();
 			results.push(std::move(job));
 		}
 	}
@@ -70,9 +70,9 @@ class Threadpool {
 
 public:
 	// jobs.push(Job) to queue work to be executed by a thread
-	ThreadsafeQueue<JOB> jobs;
+	ThreadsafeQueue<std::unique_ptr<JOB>> jobs;
 	// jobs.try_pop(Job) to dequeue the results of the jobs
-	ThreadsafeQueue<JOB> results;
+	ThreadsafeQueue<std::unique_ptr<JOB>> results;
 
 	// don't start threads
 	Threadpool () {}
