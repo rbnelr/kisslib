@@ -12,6 +12,12 @@
 	#define THREADPOOL_PROFILER_SCOPED(name)
 #endif
 
+enum ThreadPrio {
+	TPRIO_MAIN,
+	TPRIO_PARALLELISM,
+	TPRIO_BACKGROUND,
+};
+
 // std::thread::hardware_concurrency() gets the number of cpu threads
 
 // Is is probaby reasonable to set a game process priority to above_normal, so that background apps don't interfere with the games performance too much,
@@ -21,7 +27,7 @@ void set_process_priority ();
 // used to set priority of gameloop thread to be higher than normal threads to hopefully avoid cpu spiked which cause framedrops and so that background worker threads are sheduled like they should be
 // also used in threadpool threads when 'high_prio' is true to allow non-background 'parallellism', ie. starting work that needs to be done this frame and having the render thread and the threadpool work on it at the same time
 //  preempting the background threadpool and hopefully being done in time
-void set_thread_priority (int prio);
+void set_thread_priority (ThreadPrio prio);
 
 // Set a desired cpu core for the current thread to run on
 void set_thread_preferred_core (int core_index);
@@ -41,7 +47,7 @@ class Threadpool {
 
 	std::vector< std::thread >	threads;
 
-	void thread_main (std::string thread_name, int prio/*, int preferred_core*/) { // thread_name mainly for debugging
+	void thread_main (std::string thread_name, ThreadPrio prio/*, int preferred_core*/) { // thread_name mainly for debugging
 		set_thread_priority(prio);
 
 		//set_thread_preferred_core(preferred_core);
@@ -59,7 +65,7 @@ class Threadpool {
 	}
 
 	std::string thread_base_name;
-	int prio;
+	ThreadPrio prio;
 
 public:
 	// jobs.push(Job) to queue work to be executed by a thread
@@ -70,12 +76,12 @@ public:
 	// don't start threads
 	Threadpool () {}
 	// start thread_count threads
-	Threadpool (int thread_count, int prio, std::string thread_base_name="<threadpool>") {
+	Threadpool (int thread_count, ThreadPrio prio, std::string thread_base_name="<threadpool>") {
 		start_threads(thread_count, prio, std::move(thread_base_name));
 	}
 
 	// start thread_count threads
-	void start_threads (int thread_count, int prio, std::string thread_base_name="<threadpool>") {
+	void start_threads (int thread_count, ThreadPrio prio, std::string thread_base_name="<threadpool>") {
 		THREADPOOL_PROFILER_SCOPED("Threadpool::start_threads");
 		
 		//// Threadpools are ideally used with  thread_count <= cpu_core_count  to make use of the cpu without the threads preempting each other (although I don't check the thread count)
