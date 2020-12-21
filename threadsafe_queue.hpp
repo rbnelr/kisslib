@@ -38,24 +38,16 @@ class ThreadsafeQueue {
 	// use is optional (makes sense to use this to stop threads of thread pools (ie. use this on the job queue), but does not make sense to use this on the results queue)
 	bool					shutdown_flag = false;
 
-	// used by pop_all_wait and pop_n_wait to register the min number of elements they are waiting for before the thread goes to sleep
-	// this enables avoiding that the main thread gets woken up after single push
-	// 0 means signal after every push
-	int						wait_counter = 0;
-
 public:
 	// push one element onto the queue
 	void push (T elem) {
-		ZoneScoped;
-		//int notify;
 		{
 			LOCK_GUARD;
 
 			q.emplace_back( std::move(elem) );
-
-			//notify = wait_counter == 0 || q.size() >= wait_counter;
 		}
 		
+		// do notify outside of loop to avoid threads waking up only to see we have still locked the mutex
 		c.notify_one();
 	}
 
@@ -66,19 +58,18 @@ public:
 			LOCK_GUARD;
 
 			for (size_t i=0; i<count; ++i) {
-				ZoneScopedN("push item");
-			
 				q.emplace_back( std::move(elem[i]) );
-				//c.notify_one();
 			}
 		}
 
-		//for (size_t i=0; i<count; ++i) {
-		//	ZoneScopedN("notify_one");
-		//	c.notify_one();
-		//}
-
-		c.notify_all();
+		// do notify outside of loop to avoid threads waking up only to see we have still locked the mutex
+		if (count > 1) {
+			// prefer notify_all to notify_one, since a loop of notify_one is prone to be preempted in my testing
+			// note that more threads than required might be woken but they will correctly check for that
+			c.notify_all();
+		} else {
+			c.notify_one();
+		}
 	}
 
 	// wait to dequeue one element from the queue
@@ -86,7 +77,7 @@ public:
 	T pop_wait () {
 		UNIQUE_LOCK;
 
-		while(q.empty()) {
+		while (q.empty()) {
 			c.wait(lock); // release lock as long as the wait and reaquire it afterwards.
 		}
 
@@ -107,22 +98,20 @@ public:
 		q.pop_front();
 		return true;
 	}
-	
+
+	// Don't like the fact that thread is woken up just to check a number an go back to sleep potentially lots of times
+	// might as well actually process the result
+	// TODO: find a good way of only waking thread up when desired number of results are done
+#if 1
 	// wait until min elements are available, then dequeue up to max elements
 	// writes the elements into their repective indicies in output
 	// returns the number of elements dequeued
 	size_t pop_n_wait (T output[], size_t min, size_t max) {
 		UNIQUE_LOCK;
 
-		// set wait counter, we won't be woken up until the queue contais this many elements
-		//wait_counter = min;
-
 		while (q.size() < min) {
 			c.wait(lock); // release lock as long as the wait and reaquire it afterwards.
 		}
-
-		// reset the counter so future calls will get woken up
-		//wait_counter = 0;
 
 		size_t count = std::min(q.size(), max);
 		for (size_t i=0; i<count; ++i) {
@@ -138,15 +127,9 @@ public:
 	size_t pop_all_wait (std_vector<T>* output, size_t min) {
 		UNIQUE_LOCK;
 
-		// set wait counter, we won't be woken up until the queue contais this many elements
-		//wait_counter = min;
-
 		while (q.size() < min) {
 			c.wait(lock); // release lock as long as the wait and reaquire it afterwards.
 		}
-
-		// reset the counter so future calls will get woken up
-		//wait_counter = 0;
 
 		size_t count = q.size();
 		output->reserve(count);
@@ -158,6 +141,7 @@ public:
 
 		return count;
 	}
+#endif
 
 	// dequeue up to max elements (or none); never waits
 	// writes the elements into their repective indicies in output
