@@ -38,23 +38,47 @@ class ThreadsafeQueue {
 	// use is optional (makes sense to use this to stop threads of thread pools (ie. use this on the job queue), but does not make sense to use this on the results queue)
 	bool					shutdown_flag = false;
 
-public:
-	// simply push one element onto the queue
-	void push (T elem) {
-		LOCK_GUARD;
+	// used by pop_all_wait and pop_n_wait to register the min number of elements they are waiting for before the thread goes to sleep
+	// this enables avoiding that the main thread gets woken up after single push
+	// 0 means signal after every push
+	int						wait_counter = 0;
 
-		q.emplace_back( std::move(elem) );
-		c.notify_one(); // TODO: It seems like it might be possible to unlock the mutex and then notify_one, to maybe reduce sync overhead, but i was not entirely convinced that this is safe https://stackoverflow.com/questions/17101922/do-i-have-to-acquire-lock-before-calling-condition-variable-notify-one
+public:
+	// push one element onto the queue
+	void push (T elem) {
+		ZoneScoped;
+		//int notify;
+		{
+			LOCK_GUARD;
+
+			q.emplace_back( std::move(elem) );
+
+			//notify = wait_counter == 0 || q.size() >= wait_counter;
+		}
+		
+		c.notify_one();
 	}
 
 	// push multiple elements onto the queue
 	void push_n (T* elem, size_t count) {
-		LOCK_GUARD;
+		ZoneScoped;
+		{
+			LOCK_GUARD;
 
-		for (size_t i=0; i<count; ++i) {
-			q.emplace_back( std::move(elem[i]) );
-			c.notify_one();
+			for (size_t i=0; i<count; ++i) {
+				ZoneScopedN("push item");
+			
+				q.emplace_back( std::move(elem[i]) );
+				//c.notify_one();
+			}
 		}
+
+		//for (size_t i=0; i<count; ++i) {
+		//	ZoneScopedN("notify_one");
+		//	c.notify_one();
+		//}
+
+		c.notify_all();
 	}
 
 	// wait to dequeue one element from the queue
@@ -83,31 +107,22 @@ public:
 		q.pop_front();
 		return true;
 	}
-
+	
 	// wait until min elements are available, then dequeue up to max elements
 	// writes the elements into their repective indicies in output
 	// returns the number of elements dequeued
 	size_t pop_n_wait (T output[], size_t min, size_t max) {
 		UNIQUE_LOCK;
 
+		// set wait counter, we won't be woken up until the queue contais this many elements
+		//wait_counter = min;
+
 		while (q.size() < min) {
 			c.wait(lock); // release lock as long as the wait and reaquire it afterwards.
 		}
 
-		size_t count = std::min(q.size(), max);
-		for (size_t i=0; i<count; ++i) {
-			output[i] = std::move(q.front());
-			q.pop_front();
-		}
-
-		return count;
-	}
-
-	// dequeue up to max elements (or none); never waits
-	// writes the elements into their repective indicies in output
-	// returns the number of elements dequeued
-	size_t pop_n (T output[], size_t max) {
-		LOCK_GUARD;
+		// reset the counter so future calls will get woken up
+		//wait_counter = 0;
 
 		size_t count = std::min(q.size(), max);
 		for (size_t i=0; i<count; ++i) {
@@ -123,15 +138,36 @@ public:
 	size_t pop_all_wait (std_vector<T>* output, size_t min) {
 		UNIQUE_LOCK;
 
+		// set wait counter, we won't be woken up until the queue contais this many elements
+		//wait_counter = min;
+
 		while (q.size() < min) {
 			c.wait(lock); // release lock as long as the wait and reaquire it afterwards.
 		}
+
+		// reset the counter so future calls will get woken up
+		//wait_counter = 0;
 
 		size_t count = q.size();
 		output->reserve(count);
 
 		for (size_t i=0; i<count; ++i) {
 			output->emplace_back( std::move(q.front()) );
+			q.pop_front();
+		}
+
+		return count;
+	}
+
+	// dequeue up to max elements (or none); never waits
+	// writes the elements into their repective indicies in output
+	// returns the number of elements dequeued
+	size_t pop_n (T output[], size_t max) {
+		LOCK_GUARD;
+
+		size_t count = std::min(q.size(), max);
+		for (size_t i=0; i<count; ++i) {
+			output[i] = std::move(q.front());
 			q.pop_front();
 		}
 

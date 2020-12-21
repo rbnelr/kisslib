@@ -17,15 +17,8 @@
 	//  ABOVE_NORMAL_PRIORITY_CLASS + THREAD_PRIORITY_LOWEST  = 8   which is equal to NORMAL_PRIORITY_CLASS + THREAD_PRIORITY_NORMAL so equal to default threads
 	// 
 	//  HIGH_PRIORITY_CLASS + THREAD_PRIORITY_HIGHEST caused input processing to lag (mouse lag) when 100% cpu
-	void set_thread_priority (ThreadPriority prio) {
+	void set_thread_priority (int prio) {
 		int wprio = THREAD_PRIORITY_NORMAL;
-
-		switch (prio) {
-			case ThreadPriority::LOW:			wprio = THREAD_PRIORITY_LOWEST;			break;
-			case ThreadPriority::NORMAL:		wprio = THREAD_PRIORITY_NORMAL;			break;
-			case ThreadPriority::ABOVE_NORMAL:	wprio = THREAD_PRIORITY_ABOVE_NORMAL;	break;
-			case ThreadPriority::HIGH:			wprio = THREAD_PRIORITY_HIGHEST;		break;
-		}
 
 		auto ret = SetThreadPriority(GetCurrentThread(), wprio);
 		assert(ret != 0);
@@ -40,20 +33,24 @@
 		SetThreadDescription(GetCurrentThread(), kiss::utf8_to_wchar(description).c_str());
 	}
 
+	// Mostly not requied if I use higher than normal priorities for my thread
+#if 0
 	// Set windows scheduling frequency 'timer resolution' to the commonly used 1ms to make sure that our use of cpu cores never prevents a high priority thread from running for too long
 	// This should be fine for a game
 	// TODO: Look at minimization or game pause etc. at some point, in those states we should timeEndPeriod to be little more nice with the os (other processes most likely override this to 1ms anyway)
 	struct _SetWindowsSchedFreq {
-
-		static constexpr UINT PERIOD_MS = 1000;
-
+	
+		static constexpr UINT PERIOD_MS = 1;
+	
 		_SetWindowsSchedFreq () {
 			timeBeginPeriod(PERIOD_MS);
 		}
-
+	
 		~_SetWindowsSchedFreq () {
 			timeEndPeriod(PERIOD_MS);
 		}
-
+	
 	} _setWindowsSchedFreq; // set timeBeginPeriod at startup
+#endif
+
 #endif
