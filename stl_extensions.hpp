@@ -102,4 +102,118 @@ namespace kiss {
 				return true;
 		return false;
 	}
+
+	// like unordered_map but keeps the order of the elements for iteration
+	// implemented as a vector with a unordered_map for constant time lookups
+	// consider if element removal is needed, since it is O(N) because of the use of a vector of elements
+	template <typename KEY, typename VAL>
+	struct ordered_map {
+		struct KeyValue {
+			const KEY key;
+			VAL value;
+
+			KeyValue (KEY const& key, VAL const& value): key{key}, value{value} {}
+		};
+
+		std::vector<KeyValue> elements;
+		std::unordered_map<KEY, int> indexmap;
+
+		// get index of element by key or -1 if key not found
+		int indexof (KEY const& key) const {
+			auto res = indexmap.find(key);
+			if (res == indexmap.end())
+				return -1;
+			return (int)res->second;
+		}
+
+		// get ref to element by index, ignore out of range indices
+		VAL& byindex (int index) {
+			return elements[index];
+		}
+
+		// get ref to element by index, ignore out of range indices
+		VAL const& byindex (int index) const {
+			return elements[index];
+		}
+
+		// get ptr to element by key, return nullptr if key not found
+		VAL* bykey (KEY const& key) {
+			auto res = indexmap.find(key);
+			if (res == indexmap.end())
+				return nullptr;
+			return &elements[res.second];
+		}
+
+		// get ptr to element by key, return nullptr if key not found
+		VAL const* bykey (KEY const& key) const {
+			auto res = indexmap.find(key);
+			if (res == indexmap.end())
+				return nullptr;
+			return &elements[res.second];
+		}
+
+		// get ref to existing element or to newly default constructed element
+		VAL& operator[] (KEY const& key) {
+			auto res = indexmap.find(key);
+			if (res == indexmap.end()) {
+				// key not found, default construct a value
+				indexmap.insert(key, (int)elements.size());
+				elements.emplace_back(key, VAL());
+				return elements.back();
+			} else {
+				return elements[res.second];
+			}
+		}
+
+		// insert value if key is not yet in set
+		// returns true if insertion happened
+		// optionally returns index if inserted element
+		bool insert (KEY const& key, VAL const& val, int* out_index = nullptr) {
+			auto res = indexmap.emplace(key, (int)elements.size());
+			if (out_index) *out_index = (int)elements.size();
+			elements.emplace_back(key, val);
+			return res.second;
+		}
+
+		// insert or replace value with key
+		// returns true if key was new and insertion happened, false if value was replaced
+		// optionally returns index if inserted element
+		bool replace (KEY const& key, VAL const& val, int* out_index = nullptr) {
+			auto res = indexmap.emplace(key, (int)elements.size());
+			if (!res.second) {
+				// existing key, replace value
+				if (out_index) *out_index = res.first->second;
+				elements[res.first->second] = val;
+				return false;
+			} else {
+				// new key, add value
+				if (out_index) *out_index = (int)elements.size();
+				elements.emplace_back(key, val);
+				return true;
+			}
+		}
+
+	#if 0 // TODO: implement the element shuffling
+		// remove element if it exists
+		// NOTE: O(N) because elements have to be moved to moved to close gap in array
+		// consider if order is actually needed
+		// returns true if element was removed (key existed)
+		bool remove (KEY const& key, int* out_index = nullptr) {
+			auto res = indexmap.find(key);
+			if (res == indexmap.end()) {
+				// no such key found
+				return false;
+			}
+
+			if (out_index) *out_index = res->second;
+			indexmap.erase(res);
+			return true;
+		}
+	#endif
+
+		void clear () {
+			indexmap.clear();
+			elements.clear();
+		}
+	};
 }
