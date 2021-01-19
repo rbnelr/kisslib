@@ -87,15 +87,16 @@ namespace kiss {
 	// returns true if any are_equal(vec[i], r) returns true
 	// bool are_equal(VT const& l, T const& r)
 	template <typename VT, typename T, typename EQUAL, typename Alloc>
-	inline bool contains (std::vector<VT, Alloc>& vec, T& r, EQUAL are_equal) {
+	inline bool contains (std::vector<VT, Alloc>& vec, T const& r, EQUAL are_equal) {
 		for (auto& i : vec)
 			if (are_equal(i, r))
 				return true;
 		return false;
 	}
+	
 	// returns true if any (vec[i] == r) returns true
 	template <typename VT, typename T, typename Alloc>
-	inline bool contains (std::vector<VT, Alloc>& vec, T& r) {
+	inline bool contains (std::vector<VT, Alloc>& vec, T const& r) {
 		for (auto& i : vec)
 			if (i == r)
 				return true;

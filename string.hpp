@@ -2,6 +2,7 @@
 #include "stdarg.h"
 #include <string>
 #include <string_view>
+#include <regex>
 
 namespace kiss {
 	// Printf that appends to a std::string
@@ -32,6 +33,26 @@ namespace kiss {
 
 	// remove whitespace at front and back
 	std::string_view trim (std::string_view sv);
+
+	template <typename FUNC>
+	std::string regex_replace (std::string const& str, std::regex const& re, FUNC for_match) {
+		size_t cur = 0;
+
+		std::string out;
+
+		for (auto it = std::sregex_iterator(str.begin(), str.end(), re); it != std::sregex_iterator(); ++it) {
+			auto match = *it;
+
+			out += str.substr(cur, match.position());
+			cur = match.position() + match.length();
+
+			out += for_match(match);
+		}
+
+		out += str.substr(cur, str.size());
+
+		return out;
+	}
 
 	// wrapper class around a std::string to use as a key for unordered_maps that allows find with string_view to avoid heap allocs
 	struct map_string {
