@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 // Tracy tracked stl containers
 #ifdef TRACY_ENABLE
@@ -108,16 +109,14 @@ namespace kiss {
 	// consider if element removal is needed, since it is O(N) because of the use of a vector of elements
 	template <typename KEY, typename VAL>
 	struct ordered_map {
-		struct KeyValue {
-			const KEY key;
-			VAL value;
+		typedef std::unordered_map<KEY, VAL> map_t;
+		typedef typename map_t::value_type key_value;
+		typedef std::vector<typename key_value*> array_t;
 
-			KeyValue (KEY const& key, VAL const& value): key{key}, value{value} {}
-		};
+		array_t	ordered;
+		map_t	hashmap;
 
-		std::vector<KeyValue> elements;
-		std::unordered_map<KEY, int> indexmap;
-
+	#if 0 // not sensible with current approach
 		// get index of element by key or -1 if key not found
 		int indexof (KEY const& key) const {
 			auto res = indexmap.find(key);
@@ -125,70 +124,66 @@ namespace kiss {
 				return -1;
 			return (int)res->second;
 		}
+	#endif
 
 		// get ref to element by index, ignore out of range indices
-		VAL& byindex (int index) {
-			return elements[index];
+		key_value& byindex (int index) {
+			return *ordered[index];
 		}
 
 		// get ref to element by index, ignore out of range indices
-		VAL const& byindex (int index) const {
-			return elements[index];
+		key_value const& byindex (int index) const {
+			return *ordered[index];
 		}
 
 		// get ptr to element by key, return nullptr if key not found
-		VAL* bykey (KEY const& key) {
-			auto res = indexmap.find(key);
-			if (res == indexmap.end())
+		key_value* bykey (KEY const& key) {
+			auto res = hashmap.find(key);
+			if (res == hashmap.end())
 				return nullptr;
-			return &elements[res.second];
+			return &*res;
 		}
 
 		// get ptr to element by key, return nullptr if key not found
-		VAL const* bykey (KEY const& key) const {
-			auto res = indexmap.find(key);
-			if (res == indexmap.end())
+		key_value const* bykey (KEY const& key) const {
+			auto res = hashmap.find(key);
+			if (res == hashmap.end())
 				return nullptr;
-			return &elements[res.second];
+			return &(*res);
 		}
 
 		// get ref to existing element or to newly default constructed element
-		VAL& operator[] (KEY const& key) {
-			auto res = indexmap.find(key);
-			if (res == indexmap.end()) {
+		key_value& operator[] (KEY const& key) {
+			auto res = hashmap.find(key);
+			if (res == hashmap.end()) {
 				// key not found, default construct a value
-				indexmap.insert(key, (int)elements.size());
-				elements.emplace_back(key, VAL());
-				return elements.back();
-			} else {
-				return elements[res.second];
+				res = hashmap.emplace(key, VAL());
+				ordered.emplace_back(&(*res));
 			}
+			return &*res;
 		}
 
 		// insert value if key is not yet in set
 		// returns true if insertion happened
 		// optionally returns index if inserted element
 		bool insert (KEY const& key, VAL const& val, int* out_index = nullptr) {
-			auto res = indexmap.emplace(key, (int)elements.size());
-			if (out_index) *out_index = (int)elements.size();
-			elements.emplace_back(key, val);
+			std::pair<map_t::iterator, bool> res = hashmap.emplace(key, val);
+			if (out_index) *out_index = (int)ordered.size();
+			ordered.emplace_back(&(*res.first));
 			return res.second;
 		}
 
 		// insert or replace value with key
 		// returns true if key was new and insertion happened, false if value was replaced
-		// optionally returns index if inserted element
-		bool replace (KEY const& key, VAL const& val, int* out_index = nullptr) {
-			auto res = indexmap.emplace(key, (int)elements.size());
+		bool replace (KEY const& key, VAL const& val) {
+			std::pair<map_t::iterator, bool> res = hashmap.emplace(key, (int)ordered.size());
 			if (!res.second) {
 				// existing key, replace value
-				if (out_index) *out_index = res.first->second;
-				elements[res.first->second] = val;
+				res.first->second = val;
 				return false;
 			} else {
 				// new key, add value
-				if (out_index) *out_index = (int)elements.size();
-				elements.emplace_back(key, val);
+				ordered.emplace_back(&(*res.first));
 				return true;
 			}
 		}
@@ -212,8 +207,8 @@ namespace kiss {
 	#endif
 
 		void clear () {
-			indexmap.clear();
-			elements.clear();
+			hashmap.clear();
+			ordered.clear();
 		}
 	};
 }
