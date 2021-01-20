@@ -33,6 +33,58 @@
 #include <type_traits>
 
 namespace kissmath {
+
+	//// Getting scalar type + vector dimension from type
+
+	template <typename T> inline constexpr bool is_matrix () { return false; }
+
+	template<> inline constexpr bool is_matrix<float2x2> () { return true; }
+	template<> inline constexpr bool is_matrix<float3x3> () { return true; }
+	template<> inline constexpr bool is_matrix<float4x4> () { return true; }
+	template<> inline constexpr bool is_matrix<float3x4> () { return true; }
+
+	// Include all eventualities
+	enum class ScalarType {
+		FLOAT,	DOUBLE,	FLOAT8, FLOAT16,
+		INT,	UINT,
+		INT8,	UINT8,
+		INT64,	UINT64,
+		INT16,	UINT16,
+		BOOL
+	};
+	struct VectorTypeInfo {
+		ScalarType type;
+		int components;
+	};
+
+	template <typename T> inline constexpr VectorTypeInfo get_type ();
+
+	template<> inline constexpr VectorTypeInfo get_type<float   > () { return { ScalarType::FLOAT, 1 }; }
+	template<> inline constexpr VectorTypeInfo get_type<float2  > () { return { ScalarType::FLOAT, 2 }; }
+	template<> inline constexpr VectorTypeInfo get_type<float3  > () { return { ScalarType::FLOAT, 3 }; }
+	template<> inline constexpr VectorTypeInfo get_type<float4  > () { return { ScalarType::FLOAT, 4 }; }
+	template<> inline constexpr VectorTypeInfo get_type<int     > () { return { ScalarType::INT, 1 }; }
+	template<> inline constexpr VectorTypeInfo get_type<int2    > () { return { ScalarType::INT, 2 }; }
+	template<> inline constexpr VectorTypeInfo get_type<int3    > () { return { ScalarType::INT, 3 }; }
+	template<> inline constexpr VectorTypeInfo get_type<int4    > () { return { ScalarType::INT, 4 }; }
+	template<> inline constexpr VectorTypeInfo get_type<int64_t > () { return { ScalarType::INT64, 1 }; }
+	template<> inline constexpr VectorTypeInfo get_type<int64v2 > () { return { ScalarType::INT64, 2 }; }
+	template<> inline constexpr VectorTypeInfo get_type<int64v3 > () { return { ScalarType::INT64, 3 }; }
+	template<> inline constexpr VectorTypeInfo get_type<int64v4 > () { return { ScalarType::INT64, 4 }; }
+	template<> inline constexpr VectorTypeInfo get_type<uint8_t > () { return { ScalarType::UINT8, 1 }; }
+	template<> inline constexpr VectorTypeInfo get_type<uint8v2 > () { return { ScalarType::UINT8, 2 }; }
+	template<> inline constexpr VectorTypeInfo get_type<uint8v3 > () { return { ScalarType::UINT8, 3 }; }
+	template<> inline constexpr VectorTypeInfo get_type<uint8v4 > () { return { ScalarType::UINT8, 4 }; }
+	template<> inline constexpr VectorTypeInfo get_type<bool    > () { return { ScalarType::BOOL, 1 }; }
+	template<> inline constexpr VectorTypeInfo get_type<bool2   > () { return { ScalarType::BOOL, 2 }; }
+	template<> inline constexpr VectorTypeInfo get_type<bool3   > () { return { ScalarType::BOOL, 3 }; }
+	template<> inline constexpr VectorTypeInfo get_type<bool4   > () { return { ScalarType::BOOL, 4 }; }
+
+	template<> inline constexpr VectorTypeInfo get_type<int8_t  > () { return { ScalarType::INT8, 1 }; }
+	template<> inline constexpr VectorTypeInfo get_type<int16_t > () { return { ScalarType::INT16, 1 }; }
+	template<> inline constexpr VectorTypeInfo get_type<uint16_t> () { return { ScalarType::UINT16, 1 }; }
+	template<> inline constexpr VectorTypeInfo get_type<uint64_t> () { return { ScalarType::UINT64, 1 }; }
+
 	// round up x to y, assume y is power of two
 	template <typename T> inline constexpr T align_up (T x, T y) {
 		return (x + y - 1) & ~(y - 1);
