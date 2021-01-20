@@ -9,9 +9,10 @@
 // use like:
 /*
 	class T {
-		MOVE_ONLY_CLASS(T) // move operators implemented with swap
 		void* my_resource = nullptr;
 	public:
+		MOVE_ONLY_CLASS(T) // move operators implemented with swap
+
 		~T () {
 			// destructor can destruct default constructed class
 			free(my_resource); // free(nullptr) is ok
@@ -38,14 +39,19 @@
 	CLASS (CLASS&& r) {				swap(*this, r); } \
 	private:
 
+#define MOVE_ONLY_CLASS_MEMBER(CLASS, CLSMEMB) \
+	friend void swap (CLASS& l, CLASS& r) { std::swap(l.CLSMEMB, r.CLSMEMB); } \
+	CLASS& operator= (CLASS& r) = delete; \
+	CLASS (CLASS& r) = delete; \
+	CLASS& operator= (CLASS&& r) {	swap(*this, r);	return *this; } \
+	CLASS (CLASS&& r) {				swap(*this, r); }
+
 #define MOVE_ONLY_CLASS_DECL(CLASS) \
-	public: \
 	friend void swap (CLASS& l, CLASS& r); \
 	CLASS& operator= (CLASS& r) = delete; \
 	CLASS (CLASS& r) = delete; \
 	CLASS& operator= (CLASS&& r); \
-	CLASS (CLASS&& r); \
-	private:
+	CLASS (CLASS&& r);
 #define MOVE_ONLY_CLASS_DEF(CLASS) \
 	CLASS& CLASS::operator= (CLASS&& r) {	swap(*this, r);	return *this; } \
 	CLASS::CLASS (CLASS&& r) {				swap(*this, r); }
@@ -53,12 +59,10 @@
 // For classes that cannot be copied or moved at all, for example because they contain data that has to stay allocated at the same address (eg. ReadDirectoryChangesW in overlapped mode needs a pointer to a buffer)
 // Can still pass the class around by allocating it with new or make_unique
 #define NO_MOVE_COPY_CLASS(CLASS) \
-	public: \
 	CLASS& operator= (CLASS& r) = delete; \
 	CLASS (CLASS& r) = delete; \
 	CLASS& operator= (CLASS&& r) = delete; \
-	CLASS (CLASS&& r) = delete; \
-	private:
+	CLASS (CLASS&& r) = delete;
 
 // Enumeration bit operators, for using enums as bitfields (very useful because visual studio shows them like "VAL1(1) | VAL2(8) | 128")
 #define ENUM_BITFLAG_OPERATORS_TYPE(e, itype) \
