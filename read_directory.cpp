@@ -223,9 +223,9 @@ namespace kiss {
 					assert(remaining_bytes >= sizeof(FILE_NOTIFY_INFORMATION));
 					FILE_NOTIFY_INFORMATION* info = (FILE_NOTIFY_INFORMATION*)cur;
 
-					assert(remaining_bytes >= offsetof(FILE_NOTIFY_INFORMATION, FileName) +info->FileNameLength); // bytes_returned does not include a null terminator after info->FileName ??
+					assert(remaining_bytes >= offsetof(FILE_NOTIFY_INFORMATION, FileName) +info->FileNameLength);
 
-					std::string filepath = wchar_to_utf8(info->FileName);
+					std::string filepath = wchar_to_utf8(std::wstring_view(info->FileName, info->FileNameLength/2));
 
 				#if 0
 					const char* action_str = nullptr;

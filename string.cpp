@@ -44,22 +44,22 @@ namespace kiss {
 		return std::move(ret);
 	}
 
-	std::basic_string<wchar_t> utf8_to_wchar (std::string_view utf8) { // utf8 must be null terminated, which string_view does not garantuee
+	std::basic_string<wchar_t> utf8_to_wchar (std::string_view utf8) {
 
 																	   // overallocate, this might be more performant than having to call MultiByteToWideChar twice
 																	   // allocate zeroed wchar buffer able to fit as many chars (plus null terminator) as there are utf8 bytes
 																	   // this should always be enough chars, right?
 		std::basic_string<wchar_t> wstr (utf8.size() +1, '\0');
 
-		auto res = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8.data(), -1, &wstr[0], (int)wstr.size());
+		auto res = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8.data(), (int)utf8.size(), &wstr[0], (int)wstr.size());
 		assert(res > 0 && res <= wstr.size());
 
-		wstr.resize(res -1);
+		wstr.resize(res); // res is the length written without any null terminator if you pass an input length other than -1
 		//wstr.shrink_to_fit(); don't do shrink to fit because in my use cases wchars are only used temporarily to pass to win32 functions like FindFirstFileW etc.
 
 		return wstr;
 	}
-	std::string wchar_to_utf8 (std::basic_string_view<wchar_t> wchar) { // wchar must be null terminated, which string_view does not garantuee
+	std::string wchar_to_utf8 (std::basic_string_view<wchar_t> wchar) {
 
 																		// overallocate, this might be more performant than having to call MultiByteToWideChar twice
 																		// allocate zeroed buffer able to fit 4x the amount of wchars (plus null terminator)
@@ -67,11 +67,11 @@ namespace kiss {
 		std::string utf8 (wchar.size() * 4 +1, '\0'); // TODO: why did I use 4 instead of 2 when wchar is 2 bytes? Is it because wchars are also a variable length encoding? shouldnt it still work with 2 though?
 
 													  // WC_NO_BEST_FIT_CHARS sometimes throws erros ?
-		auto res = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wchar.data(), -1, &utf8[0], (int)utf8.size(), NULL, NULL);
+		auto res = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wchar.data(), (int)wchar.size(), &utf8[0], (int)utf8.size(), NULL, NULL);
 		auto err = GetLastError();
 		assert(res > 0 && res <= utf8.size());
 
-		utf8.resize(res -1);
+		utf8.resize(res); // res is the length written without any null terminator if you pass an input length other than -1
 		utf8.shrink_to_fit();
 
 		return utf8;
