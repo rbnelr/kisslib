@@ -104,12 +104,45 @@ namespace kiss {
 		return false;
 	}
 
+#if 0 // without heterogenous lookup std::unordered_map<std::string> is almost useless if you want to avoid 
+	template <typename KEY>
+	struct MapHasher {
+		size_t operator() (KEY const& key) const {
+			return std::hash<KEY>()(key);
+		}
+	};
+	template<>
+	struct MapHasher<std::string> {
+		size_t operator() (std::string const& key) const {
+			return std::hash<std::string>()(key);
+		}
+		size_t operator() (std::string_view const& key) const {
+			return std::hash<std::string_view>()(key);
+		}
+	};
+
+	template <typename KEY>
+	struct MapKeqEq {
+		size_t operator() (KEY const& l, KEY const& r) const {
+			return l == r;
+		}
+	};
+	template<>
+	struct MapKeqEq<std::string> {
+		size_t operator() (std::string const& l, std::string const& r) const {
+			return l == r;
+		}
+		size_t operator() (std::string const& l, std::string_view const& r) const {
+			return l == r;
+		}
+	};
+
 	// like unordered_map but keeps the order of the elements for iteration
 	// implemented as a vector with a unordered_map for constant time lookups
 	// consider if element removal is needed, since it is O(N) because of the use of a vector of elements
 	template <typename KEY, typename VAL>
 	struct ordered_map {
-		typedef std::unordered_map<KEY, VAL> map_t;
+		typedef std::unordered_map<KEY, VAL, MapHasher<KEY>, MapKeqEq<KEY>> map_t;
 		typedef typename map_t::value_type key_value;
 		typedef std::vector<typename key_value*> array_t;
 
@@ -118,7 +151,8 @@ namespace kiss {
 
 	#if 0 // not sensible with current approach
 		// get index of element by key or -1 if key not found
-		int indexof (KEY const& key) const {
+		template <typename K>
+		int indexof (K const& key) const {
 			auto res = indexmap.find(key);
 			if (res == indexmap.end())
 				return -1;
@@ -137,7 +171,8 @@ namespace kiss {
 		}
 
 		// get ptr to element by key, return nullptr if key not found
-		key_value* bykey (KEY const& key) {
+		template <typename K>
+		key_value* bykey (K const& key) {
 			auto res = hashmap.find(key);
 			if (res == hashmap.end())
 				return nullptr;
@@ -145,7 +180,8 @@ namespace kiss {
 		}
 
 		// get ptr to element by key, return nullptr if key not found
-		key_value const* bykey (KEY const& key) const {
+		template <typename K>
+		key_value const* bykey (K const& key) const {
 			auto res = hashmap.find(key);
 			if (res == hashmap.end())
 				return nullptr;
@@ -166,7 +202,8 @@ namespace kiss {
 		// insert value if key is not yet in set
 		// returns true if insertion happened
 		// optionally returns index if inserted element
-		bool insert (KEY const& key, VAL const& val, int* out_index = nullptr) {
+		template <typename K>
+		bool insert (K const& key, VAL const& val, int* out_index = nullptr) {
 			std::pair<map_t::iterator, bool> res = hashmap.emplace(key, val);
 			if (out_index) *out_index = (int)ordered.size();
 			ordered.emplace_back(&(*res.first));
@@ -211,4 +248,5 @@ namespace kiss {
 			ordered.clear();
 		}
 	};
+#endif
 }
