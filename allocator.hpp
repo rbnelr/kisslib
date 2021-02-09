@@ -250,11 +250,9 @@ struct BlockAllocator {
 	}
 
 	T& operator[] (uint32_t idx) {
-		assert(slots.is_allocated(idx));
 		return arr[idx];
 	}
 	T const& operator[] (uint32_t idx) const {
-		assert(slots.is_allocated(idx));
 		return arr[idx];
 	}
 
@@ -283,6 +281,8 @@ struct BlockAllocator {
 
 	void free (uint32_t idx) {
 		ALLOCATOR_PROFILE_SCOPED("BlockAllocator::free");
+
+		assert(slots.is_allocated(idx));
 
 		slots.free(idx);
 		count--;
