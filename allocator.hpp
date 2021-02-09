@@ -4,6 +4,7 @@
 #include "assert.h"
 #include <vector>
 #include "stl_extensions.hpp"
+#include <stdexcept>
 
 /*
 	Allocators implemented using OS-level virtual memory
@@ -173,6 +174,11 @@ struct AllocatorBitset {
 	uint32_t				first_free = 0; // index of first free (1) bit in bits, to speed up alloc
 	uint32_t				alloc_end = 0; // index of the free region of 1 bits starting after the last allocated (0) bit, to speed up paging for users
 	
+	bool is_allocated (uint32_t idx) {
+		assert(idx < alloc_end);
+		return (bits[idx >> 6] & (1ull << (idx & 63))) == 0;
+	}
+
 	// finds the first free (1) bit and sets it to 0, returns the index of the slot
 	uint32_t alloc () {
 		// alloc at the cached first_free index
@@ -183,8 +189,8 @@ struct AllocatorBitset {
 			_grow();
 
 		// clear bit
-		assert(bits[idx >> 6] & (1ull << (idx & 0b111111u)));
-		bits[idx >> 6] &= ~(1ull << (idx & 0b111111u));
+		assert(bits[idx >> 6] & (1ull << (idx & 63)));
+		bits[idx >> 6] &= ~(1ull << (idx & 63));
 
 		// update first_free by scanning to right for next free bit, skips bits before current first_free
 		first_free = scan_forward_free(bits.data(), (uint32_t)bits.size(), first_free >> 6);
@@ -205,7 +211,7 @@ struct AllocatorBitset {
 		assert(alloc_end > 0);
 
 		// set bit in freeset to 1
-		bits[idx >> 6] |= 1ull << (idx & 0b111111u);
+		bits[idx >> 6] |= 1ull << (idx & 63);
 
 		// only rescan for alloc_end (and potentially shrink bit array) if the last allocated bit was freed
 		if (idx >= alloc_end-1)
@@ -224,5 +230,71 @@ struct AllocatorBitset {
 		uint32_t needed_bits = ((alloc_end-1) >> 6) + 1; 
 		if (needed_bits < (uint32_t)bits.size())
 			bits.resize(needed_bits);
+	}
+};
+
+template <typename T>
+struct BlockAllocator {
+	T*			arr;
+	uint32_t	count = 0;
+	uint32_t	max_count;
+	char*		commit_end;
+	AllocatorBitset	slots;
+
+	BlockAllocator (uint32_t max_count): max_count{max_count} {
+		arr = (T*)reserve_address_space(max_count * sizeof(T));
+		commit_end = (char*)arr;
+	}
+	~BlockAllocator () {
+		release_address_space(arr, max_count * sizeof(T));
+	}
+
+	T& operator[] (uint32_t idx) {
+		assert(slots.is_allocated(idx));
+		return arr[idx];
+	}
+	T const& operator[] (uint32_t idx) const {
+		assert(slots.is_allocated(idx));
+		return arr[idx];
+	}
+
+	uint32_t alloc () {
+		ALLOCATOR_PROFILE_SCOPED("BlockAllocator::alloc");
+
+		if (count >= max_count)
+			throw std::runtime_error("BlockAllocator: max_count reached!");
+
+		uint32_t idx = slots.alloc();
+		count++;
+
+		char* new_end = (char*)&arr[idx +1];
+		if (new_end > commit_end) { // commit pages when needed
+			
+			char* new_commit_ptr = (char*)(((uintptr_t)new_end + os_page_size-1) & ~(os_page_size-1)); // round up needed commit_end
+			commit_pages(commit_end, new_commit_ptr - commit_end);
+			commit_end = new_commit_ptr;
+
+			// Memory is zero inited
+		}
+
+		ALLOCATOR_PROFILE_ALLOC(&arr[idx], sizeof(T))
+		return idx;
+	}
+
+	void free (uint32_t idx) {
+		ALLOCATOR_PROFILE_SCOPED("BlockAllocator::free");
+
+		slots.free(idx);
+		count--;
+
+		char* new_end = (char*)&arr[slots.alloc_end];
+		if (new_end <= commit_end - os_page_size) { // free pages when needed
+
+			char* new_commit_ptr = (char*)(((uintptr_t)new_end + os_page_size-1) & ~(os_page_size-1)); // round up needed commit_end
+			decommit_pages(new_commit_ptr, commit_end - new_commit_ptr);
+			commit_end = new_commit_ptr;
+		}
+
+		ALLOCATOR_PROFILE_FREE(&arr[idx])
 	}
 };

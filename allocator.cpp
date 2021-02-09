@@ -29,12 +29,8 @@ void release_address_space (void* baseptr, size_t size) {
 void commit_pages (void* ptr, size_t size) {
 	ALLOCATOR_PROFILE_SCOPED("commit_pages");
 
-	ALLOCATOR_PROFILE_ALLOC(ptr, size)
-
 	auto ret = VirtualAlloc(ptr, size, MEM_COMMIT, PAGE_READWRITE);
 	assert(ret != NULL);
-
-	DBG_MEMSET(ptr, DBG_MEMSET_UNINITED, size);
 }
 
 void decommit_pages (void* ptr, size_t size) {
