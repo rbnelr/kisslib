@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "kissmath/output/bool2.hpp"
 #include "kissmath/output/bool3.hpp"
@@ -31,6 +31,7 @@
 #include "kissmath_colors.hpp"
 
 #include <type_traits>
+#include <string>
 
 namespace kissmath {
 
@@ -38,6 +39,76 @@ namespace kissmath {
 	static constexpr uint64_t MB = 1024ull*1024;
 	static constexpr uint64_t GB = 1024ull*1024*1024;
 	static constexpr uint64_t TB = 1024ull*1024*1024*1024;
+
+	inline std::string _format_thousands (long long i, char sep, const char* printformat) {
+		std::string dst;
+		dst.reserve(27);
+
+		char src[27];
+
+		int num, commas;
+
+		num = snprintf(src, 27, printformat, i);
+
+		char* cur = src;
+
+		if (*cur == '-' || *cur == '+') {
+			dst.push_back(*cur++);
+			num--;
+		}
+
+		for (commas = 2 - num % 3; *cur; commas = (commas + 1) % 3) {
+			dst.push_back(*cur++);
+			if (commas == 1 && *cur != '\0') {
+				dst.push_back(sep);
+			}
+		}
+
+		return dst;
+	}
+
+	inline std::string format_thousands (int i, char sep=',') {
+		return _format_thousands(i, sep, "%d");
+	}
+	inline std::string format_thousands (unsigned i, char sep=',') {
+		return _format_thousands(i, sep, "%u");
+	}
+	inline std::string format_thousands (long long i, char sep=',') {
+		return _format_thousands(i, sep, "%lld");
+	}
+	inline std::string format_thousands (unsigned long long i, char sep=',') {
+		return _format_thousands(i, sep, "%llu");
+	}
+
+	struct Units {
+		std::pair<float, char const*> const* units;
+		size_t count;
+
+		Units (std::initializer_list< std::pair<float, char const*> > units):
+			units{units.begin()}, count{units.size()} {}
+	};
+
+	inline const Units BYTE_UNITS = Units({
+		{ (float)1					, "B" },
+		{ (float)1024				, "KB" },
+		{ (float)1024*1024			, "MB" },
+		{ (float)1024*1024*1024		, "GB" },
+		{ (float)1024*1024*1024*1024, "TB" },
+	});
+	inline const Units THOUSANDS_UNITS = Units({
+		{ (float)1/1000/1000/1000	, "n" }, // nano-
+		{ (float)1/1000/1000		, "u" }, // micro- (u inplace of Mu (μ))
+		{ (float)1/1000				, "m" }, // milli-
+		{ (float)1					, "" },
+		{ (float)1000				, "k" }, // kilo-
+		{ (float)1000*1000			, "M" }, // mega-
+		{ (float)1000*1000*1000		, "B" }, // giga-
+	});
+
+	template <typename T>
+	inline std::string format_unit (T val, Units const& units) {
+		// TODO:
+	}
 
 	//// Getting scalar type + vector dimension from type
 
