@@ -34,6 +34,11 @@
 
 namespace kissmath {
 
+	static constexpr uint64_t KB = 1024ull;
+	static constexpr uint64_t MB = 1024ull*1024;
+	static constexpr uint64_t GB = 1024ull*1024*1024;
+	static constexpr uint64_t TB = 1024ull*1024*1024*1024;
+
 	//// Getting scalar type + vector dimension from type
 
 	template <typename T> inline constexpr bool is_matrix () { return false; }
