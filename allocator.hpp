@@ -298,7 +298,12 @@ struct BlockAllocator {
 		ALLOCATOR_PROFILE_FREE(&arr[idx])
 	}
 
-	size_t commit_size () {
+	// how many bytes are commited
+	size_t commit_size () const {
 		return commit_end - (char*)arr;
+	}
+	// ratio of allocated bytes to commited bytes
+	float usage () const {
+		return (float)(count * sizeof(T)) / (float)commit_size();
 	}
 };
