@@ -297,4 +297,8 @@ struct BlockAllocator {
 
 		ALLOCATOR_PROFILE_FREE(&arr[idx])
 	}
+
+	size_t commit_size () {
+		return commit_end - (char*)arr;
+	}
 };
