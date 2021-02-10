@@ -118,59 +118,6 @@ static int find_next_axis (float3 next) {
 	else												return 2;
 }
 
-VoxelRaycast::VoxelRaycast (Ray ray, float max_dist) {
-	this->max_dist = max_dist;
-
-	// get direction of each axis of ray_dir (-1, 0, +1)
-	// normalize(float) is just float / abs(float)
-	step_delta = voxel_coord(	(voxel_coord_t)normalize(ray.dir.x),
-								(voxel_coord_t)normalize(ray.dir.y),
-								(voxel_coord_t)normalize(ray.dir.z) );
-
-	// get how far you have to travel along the ray to move by 1 unit in each axis
-	// (ray_dir / abs(ray_dir.x) normalizes the ray_dir so that its x is 1 or -1
-	// a zero in ray_dir produces a NaN in step because 0 / 0
-	step_dist = float3(	length(ray.dir / abs(ray.dir.x)),
-						length(ray.dir / abs(ray.dir.y)),
-						length(ray.dir / abs(ray.dir.z)) );
-
-	// get initial positon in block and intial voxel coord
-	float3 ray_pos_floor = floor(ray.pos);
-	float3 pos_in_block = ray.pos -ray_pos_floor;
-
-	cur_voxel = (voxel_coord)ray_pos_floor;
-
-	// how far to step along ray to step into the next voxel for each axis
-	next = step_dist * select(ray.dir > 0, 1 -pos_in_block, pos_in_block);
-
-	// NaN -> Inf
-	next = select(ray.dir != 0, next, INF);
-
-	// find the axis of the next voxel step
-	cur_axis = find_next_axis(next);
-	cur_dist = next[cur_axis];
-}
-
-int VoxelRaycast::get_step_face () {
-	return cur_axis*2 +(step_delta[cur_axis] < 0 ? 1 : 0);
-}
-
-bool VoxelRaycast::step () {
-	// find the axis of the cur step
-	cur_axis = find_next_axis(next);
-	cur_dist = next[cur_axis];
-
-	if (cur_dist > max_dist)
-		return false; // stop stepping because max_dist is reached
-
-	// clac the distance at which the next voxel step for this axis happens
-	next[cur_axis] += step_dist[cur_axis];
-	// step into the next voxel
-	cur_voxel[cur_axis] += step_delta[cur_axis];
-
-	return true;
-}
-
 ////
 
 // raycast against yz aligned plane from (pos_x, 0, -height) to (pos_x, 1, 1)

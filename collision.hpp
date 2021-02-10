@@ -49,62 +49,6 @@ inline bool frustrum_cull_aabb (View_Frustrum const& frust, AABB aabb) {
 	return frustrum_cull_aabb(frust, aabb.lo.x, aabb.lo.y, aabb.lo.z, aabb.hi.x, aabb.hi.y, aabb.hi.z);
 }
 
-typedef int voxel_coord_t;
-typedef int3 voxel_coord;
-
-struct VoxelRaycast {
-	float		max_dist;
-	voxel_coord	step_delta;
-	float3		step_dist;
-
-	float3		next;
-
-	voxel_coord	cur_voxel;
-	int			cur_axis;
-	float		cur_dist;
-
-	static int find_next_axis (float3 next) { // index of smallest component
-		if (		next.x < next.y && next.x < next.z )	return 0;
-		else if (	next.y < next.z )						return 1;
-		else												return 2;
-	}
-
-	// Start VoxelRaycast with a ray, cur_voxel can be checked afterwards for the starting voxel
-	VoxelRaycast (Ray ray, float max_dist);
-
-	// Get the face through which the ray enters in the next step
-	int get_step_face ();
-
-	bool step ();
-};
-
-template <typename FUNC>
-bool raycast_voxels (Ray ray, float max_dist, FUNC hit_block, int* iterations=nullptr, bool hit_at_max_dist=false) {
-	VoxelRaycast vrc = VoxelRaycast(ray, max_dist);
-
-	if (hit_block(vrc.cur_voxel, -1, vrc.cur_dist, false)) // ray started inside block, -1 as no face was hit
-		return true;
-
-	bool hit = false;
-
-	int counter = 1;
-	while (vrc.step()) {
-		if (hit_block(vrc.cur_voxel, vrc.get_step_face(), vrc.cur_dist, false)) {
-			hit = true;
-			break;
-		}
-		++counter;
-	}
-
-	if (!hit && hit_at_max_dist) {
-		hit_block(vrc.cur_voxel, vrc.get_step_face(), vrc.cur_dist, true);
-		hit = true;
-	}
-
-	if (iterations) *iterations = counter;
-	return hit;
-}
-
 struct CollisionHit {
 	float dist; // how far obj A moved relative to obj B to hit it
 	float3 pos; // pos of obj A relative to obj B at collision time
