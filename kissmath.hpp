@@ -32,6 +32,7 @@
 
 #include <type_traits>
 #include <string>
+#include "assert.h"
 
 namespace kissmath {
 
@@ -163,11 +164,35 @@ namespace kissmath {
 
 	// round up x to y, assume y is power of two
 	template <typename T> inline constexpr T align_up (T x, T y) {
-		return (x + y - 1) & ~(y - 1);
+		return (x + (y - 1)) & ~(y - 1);
 	}
 	// check if power of two
 	template <typename T> inline constexpr T is_pot (T x) {
 		return (x & (x - 1)) == 0;
+	}
+
+	// round up to power of two, 0->1 1->1 2->2 3->4 4->4 5->8 etc.  x>2^31 won't work
+	inline __declspec(noinline) uint32_t round_up_pot (uint32_t x) {
+		if (x <= 1) return 1;
+		x--;
+		assert(x <= (1u << 31)); // can't represent 2^32 so x>2^31 this is out of range
+
+		unsigned long i;
+		auto res = _BitScanReverse(&i, (unsigned long)x);
+		assert(res);
+		return 1u << (i+1);
+	}
+
+	// round up to power of two, 0->1 1->1 2->2 3->4 4->4 5->8 etc.  x>2^63 won't work
+	inline __declspec(noinline) uint64_t round_up_pot (uint64_t x) {
+		if (x <= 1) return 1;
+		x--;
+		assert(x <= (1ull << 63)); // can't represent 2^64 so x>2^63 this is out of range
+
+		unsigned long i;
+		auto res = _BitScanReverse64(&i, x);
+		assert(res);
+		return 1ull << (i+1);
 	}
 	
 	// from https://github.com/aappleby/smhasher/blob/master/src/MurmurHash1.cpp
