@@ -1,12 +1,12 @@
 #include "collision.hpp"
 
-bool circle_square_intersect (float2 circ_origin, float circ_radius) {
+bool circle_square_intersect (float2 const& circ_origin, float circ_radius) {
 
 	float2 nearest_pos_on_square = clamp(circ_origin, 0,1);
 
 	return length_sqr(nearest_pos_on_square -circ_origin) < circ_radius*circ_radius;
 }
-bool cylinder_cube_intersect (float3 cyl_origin, float cyl_radius, float cyl_height) {
+bool cylinder_cube_intersect (float3 const& cyl_origin, float cyl_radius, float cyl_height) {
 
 	if (cyl_origin.z >= 1) return false; // cylinder above cube
 	if (cyl_origin.z <= -cyl_height) return false; // cylinder below cube
@@ -14,7 +14,7 @@ bool cylinder_cube_intersect (float3 cyl_origin, float cyl_radius, float cyl_hei
 	return circle_square_intersect((float2)cyl_origin, cyl_radius);
 }
 
-float point_square_nearest_dist (float2 square_pos, float2 square_size, float2 point) {
+float point_square_nearest_dist (float2 const& square_pos, float2 const& square_size, float2 const& point) {
 
 	float2 pos_rel = point -square_pos;
 
@@ -23,7 +23,7 @@ float point_square_nearest_dist (float2 square_pos, float2 square_size, float2 p
 	return length(nearest_pos_on_square -pos_rel);
 }
 
-float point_box_nearest_dist_sqr (float3 box_pos, float3 box_size, float3 point) {
+float point_box_nearest_dist_sqr (float3 const& box_pos, float3 const& box_size, float3 const& point) {
 
 	float3 pos_rel = point - box_pos;
 
@@ -32,17 +32,17 @@ float point_box_nearest_dist_sqr (float3 box_pos, float3 box_size, float3 point)
 	return length_sqr(nearest_pos_on_square - pos_rel);
 }
 
-float point_box_nearest_dist (float3 box_pos, float3 box_size, float3 point) {
+float point_box_nearest_dist (float3 const& box_pos, float3 const& box_size, float3 const& point) {
 	return sqrt(point_box_nearest_dist_sqr(box_pos, box_size, point));
 }
 
 
 // aabb gets culled when is lies completely on +normal dir side of palne
 // returns true when culled
-bool plane_cull_aabb (Plane const& plane, AABB aabb) {
+bool plane_cull_aabb (Plane const& plane, AABB const& aabb) {
 	// test if any of the 9 points lie inside the plane => not culled
-	aabb.lo -= plane.pos;
-	aabb.hi -= plane.pos;
+	float3 lo = aabb.lo - plane.pos;
+	float3 hi = aabb.hi - plane.pos;
 
 	if (dot(plane.normal, float3(aabb.lo.x, aabb.lo.y, aabb.lo.z)) <= 0) return false;
 	if (dot(plane.normal, float3(aabb.hi.x, aabb.lo.y, aabb.lo.z)) <= 0) return false;
@@ -111,14 +111,6 @@ bool frustrum_cull_aabb (View_Frustrum const& frust, float lx, float ly, float l
 	}
 	return false;
 }
-
-static int find_next_axis (float3 next) {
-	if (		next.x < next.y && next.x < next.z )	return 0;
-	else if (	next.y < next.z )						return 1;
-	else												return 2;
-}
-
-////
 
 // raycast against yz aligned plane from (pos_x, 0, -height) to (pos_x, 1, 1)
 void _minkowski_cylinder_cube__raycast_x_plane (

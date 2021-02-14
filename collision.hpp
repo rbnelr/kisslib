@@ -27,25 +27,25 @@ struct View_Frustrum {
 };
 
 // intersection test between circle and 1x1 square going from 0,0 to 1,1
-bool circle_square_intersect (float2 circ_origin, float circ_radius);
+bool circle_square_intersect (float2 const& circ_origin, float circ_radius);
 
 // intersection test between cylinder and 1x1x1 cube going from 0,0,0 to 1,1,1
 // cylinder origin is at the center of the circle at the base of the cylinder (-z circle)
-bool cylinder_cube_intersect (float3 cyl_origin, float cyl_radius, float cyl_height);
+bool cylinder_cube_intersect (float3 const& cyl_origin, float cyl_radius, float cyl_height);
 
 // nearest distance from point to square (square covers [square_pos, square_pos +square_size] on each axis)
-float point_square_nearest_dist (float2 square_pos, float2 square_size, float2 point);
+float point_square_nearest_dist (float2 const& square_pos, float2 const& square_size, float2 const& point);
 
 // nearest distance from point to box (box covers [box_pos, box_pos + box_size] on each axis)
-float point_box_nearest_dist_sqr (float3 box_pos, float3 box_size, float3 point);
+float point_box_nearest_dist_sqr (float3 const& box_pos, float3 const& box_size, float3 const& point);
 // nearest distance from point to box (box covers [box_pos, box_pos + box_size] on each axis)
-float point_box_nearest_dist (float3 box_pos, float3 box_size, float3 point);
+float point_box_nearest_dist (float3 const& box_pos, float3 const& box_size, float3 const& point);
 
 // cull (return true) if AABB is completely outside of one of the view frustrums planes
 // this cull 99% of the AABB that are invisible, but returns a false negative sometimes
 bool frustrum_cull_aabb (View_Frustrum const& frust, float lx, float ly, float lz, float hx, float hy, float hz);
 
-inline bool frustrum_cull_aabb (View_Frustrum const& frust, AABB aabb) {
+inline bool frustrum_cull_aabb (View_Frustrum const& frust, AABB const& aabb) {
 	return frustrum_cull_aabb(frust, aabb.lo.x, aabb.lo.y, aabb.lo.z, aabb.hi.x, aabb.hi.y, aabb.hi.z);
 }
 
