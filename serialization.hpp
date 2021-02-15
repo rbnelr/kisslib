@@ -11,11 +11,9 @@ using json = nlohmann::ordered_json;
 	#define SERIALIZE_LOG(type, ...) fprintf(stderr, __VA_ARGS__)
 #endif
 
-template <typename T>
-inline bool save (char const* filename, T const& obj) {
+inline bool save_json (char const* filename, json const& json) {
 	ZoneScoped;
 
-	json json = obj;
 	std::string json_str;
 	try {
 		json_str = json.dump(1, '\t');
@@ -29,6 +27,13 @@ inline bool save (char const* filename, T const& obj) {
 		return false;
 	}
 	return true;
+}
+
+template <typename T>
+inline bool save (char const* filename, T const& obj) {
+	ZoneScoped;
+	json json = obj;
+	return save_json(filename, json);
 }
 
 inline bool load_json (char const* filename, json* j) {
@@ -56,22 +61,6 @@ inline json load_json (char const* filename) {
 
 template <typename T>
 inline bool load (char const* filename, T* obj) {
-	ZoneScoped;
-
-	try {
-		json json;
-		if (load_json(filename, &json)) {
-			*obj = json.get<T>();
-			return true;
-		}
-	} catch (std::exception& ex) {
-		SERIALIZE_LOG(ERROR, "Error when deserializing something: %s", ex.what());
-	}
-	return false;
-}
-
-template <typename T>
-inline bool load_overwrite (char const* filename, T* obj) {
 	ZoneScoped;
 
 	try {
