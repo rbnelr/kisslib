@@ -254,13 +254,13 @@ namespace kissmath {
 		return h;
 	} 
 
-	inline size_t hash (int2 const& v) { return MurmurHash1_32((uint32_t*)&v.x, 2); };
-	inline size_t hash (int3 const& v) { return MurmurHash1_32((uint32_t*)&v.x, 3); };
-	inline size_t hash (int4 const& v) { return MurmurHash1_32((uint32_t*)&v.x, 4); };
+	inline size_t hash (int2 const& v) { return MurmurHash1_32((uint32_t const*)&v.x, 2); };
+	inline size_t hash (int3 const& v) { return MurmurHash1_32((uint32_t const*)&v.x, 3); };
+	inline size_t hash (int4 const& v) { return MurmurHash1_32((uint32_t const*)&v.x, 4); };
 
-	inline size_t hash (float2 const& v) { return MurmurHash1_32((uint32_t*)&v.x, 2); };
-	inline size_t hash (float3 const& v) { return MurmurHash1_32((uint32_t*)&v.x, 3); };
-	inline size_t hash (float4 const& v) { return MurmurHash1_32((uint32_t*)&v.x, 4); };
+	inline size_t hash (float2 const& v) { return MurmurHash1_32((uint32_t const*)&v.x, 2); };
+	inline size_t hash (float3 const& v) { return MurmurHash1_32((uint32_t const*)&v.x, 3); };
+	inline size_t hash (float4 const& v) { return MurmurHash1_32((uint32_t const*)&v.x, 4); };
 
 	inline size_t hash (uint8v2 const& v) { return MurmurHash1_8(&v.x, 2); };
 	inline size_t hash (uint8v3 const& v) { return MurmurHash1_8(&v.x, 3); };
