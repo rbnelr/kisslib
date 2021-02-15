@@ -55,7 +55,7 @@
 	using std_unordered_map = std::unordered_map<Key, T, Hash, Pred, TracySTLAllocator<std::pair<const Key, T>>>;
 	
 	template <typename Key, typename Hash = std::hash<Key>, typename Pred = std::equal_to<Key>>
-	using std_unordered_set = std::unordered_set<Key, Hash, Pred, TracySTLAllocator<std::pair<const Key, T>>>;
+	using std_unordered_set = std::unordered_set<Key, Hash, Pred, TracySTLAllocator<Key>>;
 #else
 	template <typename T>
 	using std_vector = std::vector<T>;
