@@ -34,6 +34,8 @@
 #include <string>
 #include "assert.h"
 
+#include "smhasher/MurmurHash2.h"
+
 namespace kissmath {
 
 	static constexpr uint64_t KB = 1024ull;
@@ -203,6 +205,7 @@ namespace kissmath {
 		return 1ull << (i+1);
 	}
 	
+#if 0
 	// from https://github.com/aappleby/smhasher/blob/master/src/MurmurHash1.cpp
 	inline uint32_t MurmurHash1_32 (uint32_t const* key, int len) {
 		constexpr uint32_t m = 0xc6a4a793;
@@ -252,19 +255,20 @@ namespace kissmath {
 		h ^= h >> 17;
 
 		return h;
-	} 
+	}
+#endif
 
-	inline size_t hash (int2 const& v) { return MurmurHash1_32((uint32_t const*)&v.x, 2); };
-	inline size_t hash (int3 const& v) { return MurmurHash1_32((uint32_t const*)&v.x, 3); };
-	inline size_t hash (int4 const& v) { return MurmurHash1_32((uint32_t const*)&v.x, 4); };
+	inline uint64_t hash (int2 const& v, uint64_t seed=0) { return MurmurHash64A((uint32_t const*)&v.x, 2*sizeof(int), seed); };
+	inline uint64_t hash (int3 const& v, uint64_t seed=0) { return MurmurHash64A((uint32_t const*)&v.x, 3*sizeof(int), seed); };
+	inline uint64_t hash (int4 const& v, uint64_t seed=0) { return MurmurHash64A((uint32_t const*)&v.x, 4*sizeof(int), seed); };
 
-	inline size_t hash (float2 const& v) { return MurmurHash1_32((uint32_t const*)&v.x, 2); };
-	inline size_t hash (float3 const& v) { return MurmurHash1_32((uint32_t const*)&v.x, 3); };
-	inline size_t hash (float4 const& v) { return MurmurHash1_32((uint32_t const*)&v.x, 4); };
+	inline uint64_t hash (float2 const& v, uint64_t seed=0) { return MurmurHash64A((uint32_t const*)&v.x, 2*sizeof(float), seed); };
+	inline uint64_t hash (float3 const& v, uint64_t seed=0) { return MurmurHash64A((uint32_t const*)&v.x, 3*sizeof(float), seed); };
+	inline uint64_t hash (float4 const& v, uint64_t seed=0) { return MurmurHash64A((uint32_t const*)&v.x, 4*sizeof(float), seed); };
 
-	inline size_t hash (uint8v2 const& v) { return MurmurHash1_8(&v.x, 2); };
-	inline size_t hash (uint8v3 const& v) { return MurmurHash1_8(&v.x, 3); };
-	inline size_t hash (uint8v4 const& v) { return MurmurHash1_8(&v.x, 4); };
+	inline uint64_t hash (uint8v2 const& v, uint64_t seed=0) { return MurmurHash64A(&v.x, 2, seed); };
+	inline uint64_t hash (uint8v3 const& v, uint64_t seed=0) { return MurmurHash64A(&v.x, 3, seed); };
+	inline uint64_t hash (uint8v4 const& v, uint64_t seed=0) { return MurmurHash64A(&v.x, 4, seed); };
 }
 
 namespace std {
