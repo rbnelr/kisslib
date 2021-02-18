@@ -258,17 +258,82 @@ namespace kissmath {
 	}
 #endif
 
-	inline uint64_t hash (int2 const& v, uint64_t seed=0) { return MurmurHash64A((uint32_t const*)&v.x, 2*sizeof(int), seed); };
-	inline uint64_t hash (int3 const& v, uint64_t seed=0) { return MurmurHash64A((uint32_t const*)&v.x, 3*sizeof(int), seed); };
-	inline uint64_t hash (int4 const& v, uint64_t seed=0) { return MurmurHash64A((uint32_t const*)&v.x, 4*sizeof(int), seed); };
+	// Turns out that my MurmurHash1_32 code above was inlined and optimized into efficient code
+	// but this hash function retains the loops in the generated code even though it it inlined
+	// to fix that I made the len a compile time constant template argument, this gets us seperate code to be generated for different lengths
+	// when you want a hash of a variable (or long) length of course use the regular code
+	template <int LEN>
+	uint64_t MurmurHash64A_fixedlen ( const void * key, uint64_t seed )
+	{
+		static constexpr int len = LEN;
 
-	inline uint64_t hash (float2 const& v, uint64_t seed=0) { return MurmurHash64A((uint32_t const*)&v.x, 2*sizeof(float), seed); };
-	inline uint64_t hash (float3 const& v, uint64_t seed=0) { return MurmurHash64A((uint32_t const*)&v.x, 3*sizeof(float), seed); };
-	inline uint64_t hash (float4 const& v, uint64_t seed=0) { return MurmurHash64A((uint32_t const*)&v.x, 4*sizeof(float), seed); };
+		static constexpr uint64_t m = 0xc6a4a7935bd1e995ull;
+		static constexpr int r = 47;
 
-	inline uint64_t hash (uint8v2 const& v, uint64_t seed=0) { return MurmurHash64A(&v.x, 2, seed); };
-	inline uint64_t hash (uint8v3 const& v, uint64_t seed=0) { return MurmurHash64A(&v.x, 3, seed); };
-	inline uint64_t hash (uint8v4 const& v, uint64_t seed=0) { return MurmurHash64A(&v.x, 4, seed); };
+		uint64_t h = seed ^ (len * m);
+
+		const uint64_t * data = (const uint64_t *)key;
+		const uint64_t * end = data + (len/8);
+		
+		//while(data != end)
+		for (int i=0; i<len/8; ++i) // This actually makes the compiler unroll this loop unlike the original while loop
+		{
+			uint64_t k = *data++;
+
+			k *= m; 
+			k ^= k >> r; 
+			k *= m; 
+
+			h ^= k;
+			h *= m; 
+		}
+
+		const unsigned char * data2 = (const unsigned char*)data;
+
+	#if 0
+		// This does not get optimized away even though the len is constexpr
+		switch (len & 7)
+		{
+			case 7: h ^= uint64_t(data2[6]) << 48;
+			case 6: h ^= uint64_t(data2[5]) << 40;
+			case 5: h ^= uint64_t(data2[4]) << 32;
+			case 4: h ^= uint64_t(data2[3]) << 24;
+			case 3: h ^= uint64_t(data2[2]) << 16;
+			case 2: h ^= uint64_t(data2[1]) << 8;
+			case 1: h ^= uint64_t(data2[0]);
+				h *= m;
+		};
+	#else
+		int i = len & 7;
+		if (i > 0) {
+			while (i > 0) {
+				--i;
+				h ^= uint64_t(data2[i]) << (i * 8);
+			}
+			h *= m;
+		}
+	#endif
+
+		h ^= h >> r;
+		h *= m;
+		h ^= h >> r;
+
+		return h;
+	} 
+
+	inline uint64_t hash (int         i, uint64_t seed=0) {      return MurmurHash64A_fixedlen<sizeof(i)>((uint32_t const*)&i, seed); };
+	inline uint64_t hash (int2 const& v, uint64_t seed=0) {      return MurmurHash64A_fixedlen<sizeof(v)>((uint32_t const*)&v, seed); };
+	inline uint64_t hash (int3 const& v, uint64_t seed=0) {      return MurmurHash64A_fixedlen<sizeof(v)>((uint32_t const*)&v, seed); };
+	inline uint64_t hash (int4 const& v, uint64_t seed=0) {      return MurmurHash64A_fixedlen<sizeof(v)>((uint32_t const*)&v, seed); };
+
+	inline uint64_t hash (float         f, uint64_t seed=0) {    return MurmurHash64A_fixedlen<sizeof(f)>((uint32_t const*)&f, seed); };
+	inline uint64_t hash (float2 const& v, uint64_t seed=0) {    return MurmurHash64A_fixedlen<sizeof(v)>((uint32_t const*)&v, seed); };
+	inline uint64_t hash (float3 const& v, uint64_t seed=0) {    return MurmurHash64A_fixedlen<sizeof(v)>((uint32_t const*)&v, seed); };
+	inline uint64_t hash (float4 const& v, uint64_t seed=0) {    return MurmurHash64A_fixedlen<sizeof(v)>((uint32_t const*)&v, seed); };
+
+	inline uint64_t hash (uint8v2 const& v, uint64_t seed=0) {   return MurmurHash64A_fixedlen<sizeof(v)>(&v.x, seed); };
+	inline uint64_t hash (uint8v3 const& v, uint64_t seed=0) {   return MurmurHash64A_fixedlen<sizeof(v)>(&v.x, seed); };
+	inline uint64_t hash (uint8v4 const& v, uint64_t seed=0) {   return MurmurHash64A_fixedlen<sizeof(v)>(&v.x, seed); };
 }
 
 namespace std {
