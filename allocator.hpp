@@ -27,7 +27,10 @@
 	#define ALLOCATOR_NULLFAIL 1
 #endif
 
-#ifdef TRACY_ENABLE
+// disable 
+//#define ALLOC_TRACY_ENABLE TRACY_ENABLE
+
+#ifdef ALLOC_TRACY_ENABLE
 	#include "Tracy.hpp"
 
 	#define ALLOCATOR_PROFILE_SCOPED(name) ZoneScopedNC(name, tracy::Color::Crimson)
