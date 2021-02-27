@@ -28,10 +28,10 @@ namespace {
 	template<> constexpr inline _Format get_format<float4 > () { return { true, 32, 4 }; } // rgb (linear) + alpha
 
 	template <typename T>
-	inline T* _stbi_load_from_memory (unsigned char* file_data, uint64_t file_size, int2* size) {
+	inline T* _stbi_load_from_memory (unsigned char* file_data, uint64_t file_size, int2* size, bool top_down=false) {
 		constexpr _Format F = get_format<T>();
 
-		//stbi_set_flip_vertically_on_load(true); // OpenGL has textues bottom-up, Vulkan top-down
+		stbi_set_flip_vertically_on_load(!top_down); // OpenGL has textues bottom-up, Vulkan top-down
 
 		int2 sz;
 		int n;
@@ -99,14 +99,14 @@ public:
 	}
 
 	// Loads a image file from disk, potentially converting it to the target pixel type
-	static bool load_from_file (const char* filepath, Image<T>* out) {
+	static bool load_from_file (const char* filepath, Image<T>* out, bool top_down=false) {
 		uint64_t file_size;
 		auto file_data = kiss::load_binary_file(filepath, &file_size);
 		if (!file_data)
 			return false;
 
 		int2 size;
-		T* pixels = _stbi_load_from_memory<T>(file_data.get(), file_size, &size);
+		T* pixels = _stbi_load_from_memory<T>(file_data.get(), file_size, &size, top_down);
 		if (!pixels)
 			return false;
 
