@@ -110,6 +110,13 @@ namespace kiss {
 		return false;
 	}
 
+	template <typename T>
+	T* push_back (std::vector<T>& vec, size_t count) {
+		size_t offs = vec.size();
+		vec.resize(offs + count);
+		return &vec[offs];
+	}
+
 #if 0 // without heterogenous lookup std::unordered_map<std::string> is almost useless if you want to avoid 
 	template <typename KEY>
 	struct MapHasher {
