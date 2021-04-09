@@ -45,7 +45,7 @@ inline bool load_json (char const* filename, json* j) {
 		return false;
 	}
 	try {
-		*j = json::parse(str);
+		*j = json::parse(str, nullptr, true, true); // last arg: ignore_comments
 	} catch (std::exception& ex) {
 		SERIALIZE_LOG(ERROR, "[load_json] Error in json::parse: %s", ex.what());
 		return false;
