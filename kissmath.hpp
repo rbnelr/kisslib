@@ -173,6 +173,15 @@ namespace kissmath {
 		return (x & (x - 1)) == 0;
 	}
 
+	// check if power of two
+	inline constexpr int get_const_log2 (uint32_t x) {
+		for (int i=31; i>=0; i--) {
+			if (x & (1u << i))
+				return i;
+		}
+		return -1;
+	}
+
 	// round up to power of two, 0->1 1->1 2->2 3->4 4->4 5->8 etc.  x>2^31 won't work
 	inline uint32_t round_up_pot (uint32_t x, uint32_t* shift=nullptr) {
 		if (x <= 1) {
