@@ -77,6 +77,15 @@ namespace kiss {
 			return FILECHANGE_NONE;
 		}
 
+		inline file_change_e any_starts_with (std::string const& prefix, file_change_e filter=FILECHANGE_NONE) {
+			for (auto& file : files) {
+				if (file.filename._Starts_with(prefix) && (filter == FILECHANGE_NONE || (file.changes & filter) != 0)) {
+					return file.changes;
+				}
+			}
+			return FILECHANGE_NONE;
+		}
+
 		// shortcut to know if any changes occurred, if you are feeling lazy
 		bool any () {
 			return !files.empty();
