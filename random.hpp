@@ -9,15 +9,10 @@ struct _Random {
 	_Random (); // seed with random value from global rng
 	_Random (uint64_t seed): generator{(unsigned int)seed} {} // seed with value
 
-	template <typename DISTRIBUTION>
-	inline auto generate (DISTRIBUTION distr) {
-		return distr(generator);
-	}
-
 	inline uint32_t uniform_u32 () {
 		static_assert(sizeof(uint32_t) == sizeof(int), "");
 		std::uniform_int_distribution<int> distribution (std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
-		return (uint32_t)generate(distribution);
+		return (uint32_t)distribution(generator);
 	}
 	inline uint64_t uniform_u64 () {
 		return (uint64_t)uniform_u32() << 32ull | (uint64_t)uniform_u32();
@@ -25,22 +20,22 @@ struct _Random {
 
 	inline bool chance (float prob=0.5f) {
 		std::bernoulli_distribution	distribution (prob);
-		return generate(distribution);
+		return distribution(generator);
 	}
 
 	inline int uniformi (int min, int max) {
 		std::uniform_int_distribution<int> distribution (min, max -1);
-		return generate(distribution);
+		return distribution(generator);
 	}
 
 	inline float uniformf (float min=0, float max=1) {
 		std::uniform_real_distribution<float>	distribution (min, max);
-		return generate(distribution);
+		return distribution(generator);
 	}
 
 	inline float normalf (float stddev, float mean=0) {
 		std::normal_distribution<float> distribution (mean, stddev);
-		return generate(distribution);
+		return distribution(generator);
 	}
 
 	inline int2   uniform2i (int2   min  , int2   max   ) { return int2(  uniformi(min.x, max.x), uniformi(min.y, max.y)); }
@@ -55,14 +50,33 @@ struct _Random {
 	inline float4 uniform4f (float4 min=0, float4 max=1 ) { return float4(uniformf(min.x, max.x), uniformf(min.y, max.y), uniformf(min.z, max.z), uniformf(min.w, max.w)    ); }
 	inline float4 normal4f  (float4 stddev, float4 mean=0) { return float4(normalf(stddev.x, mean.x), normalf(stddev.y, mean.y), normalf(stddev.z, mean.z), normalf(stddev.w, mean.w)); }
 
+	// TODO: replace with spherical coordinates
+
+	// random point uniformly distributed in unit sphere
 	inline float3 uniform_in_sphere () {
+	#if 0
 		float3 pos;
 		do {
 			pos = uniform3f(-1.0f, +1.0f);
 		} while (length_sqr(pos) > 1.0f);
 		return pos;
+	#else
+		std::uniform_real_distribution<float>	distribution (0.0f, 1.0f);
+
+		float azim =      distribution(generator) * PI*2.0f;
+		float elev = acos(distribution(generator) * 2.0f - 1.0f);
+		float radius = cbrtf(distribution(generator)); // cbrtf = cube root
+
+		float ac = cos(azim), as = sin(azim);
+		float ec = cos(elev), es = sin(elev);
+
+		return float3(radius * ac*es, radius * as*es, radius * ec);
+	#endif
 	}
+
+	// random point uniformly distributed on surface of unit sphere
 	inline float3 uniform_direction () {
+	#if 0
 		float3 pos;
 		float len;
 		do {
@@ -71,8 +85,21 @@ struct _Random {
 		} while (len > 1.0f || len == 0.0f);
 		
 		return pos / sqrt(len);
+	#else
+		std::uniform_real_distribution<float>	distribution (0.0f, 1.0f);
+
+		float azim =      distribution(generator) * PI*2.0f;
+		float elev = acos(distribution(generator) * 2.0f - 1.0f);
+
+		float ac = cos(azim), as = sin(azim);
+		float ec = cos(elev), es = sin(elev);
+
+		return float3(ac*es, as*es, ec);
+	#endif
 	}
 
+	// random uniform direction with random uniform length in some range
+	// could be used as random velocity
 	inline float3 uniform_vector (float min_magnitude=0, float max_magnitude=1) {
 		return uniform_direction() * uniformf(min_magnitude, max_magnitude);
 	}
