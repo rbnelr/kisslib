@@ -14,7 +14,7 @@ bool cylinder_cube_intersect (float3 const& cyl_origin, float cyl_radius, float 
 	return circle_square_intersect((float2)cyl_origin, cyl_radius);
 }
 
-float point_square_nearest_dist (float2 const& square_pos, float2 const& square_size, float2 const& point) {
+float point_square_dist (float2 const& square_pos, float2 const& square_size, float2 const& point) {
 
 	float2 pos_rel = point -square_pos;
 
@@ -23,17 +23,45 @@ float point_square_nearest_dist (float2 const& square_pos, float2 const& square_
 	return length(nearest_pos_on_square -pos_rel);
 }
 
-float point_box_nearest_dist_sqr (float3 const& box_pos, float3 const& box_size, float3 const& point) {
+float point_box_dist (float3 const& box_pos, float3 const& box_size, float3 const& point) {
+	return sqrt(point_box_dist_sqr(box_pos, box_size, point));
+}
+
+float point_line_dist (float2 const& line_pos, float2 const& line_dir, float2 const& point) {
+
+	float2 pos_rel = point - line_pos;
+
+	float len_sqr = length_sqr(line_dir);
+	float t = len_sqr == 0.0f ? 0 : dot(line_dir, pos_rel) / len_sqr;
+
+	float2 projected = t * line_dir;
+	float2 offset = pos_rel - projected;
+
+	return length(offset);
+}
+
+float point_line_segment_dist (float2 const& line_pos, float2 const& line_dir, float2 const& point) {
+
+	float2 pos_rel = point - line_pos;
+
+	float len_sqr = length_sqr(line_dir);
+	float t = len_sqr == 0.0f ? 0 : dot(line_dir, pos_rel) / len_sqr;
+
+	t = clamp(t, 0.0f, 1.0f);
+
+	float2 projected = t * line_dir;
+	float2 offset = pos_rel - projected;
+
+	return length(offset);
+}
+
+float point_box_dist_sqr (float3 const& box_pos, float3 const& box_size, float3 const& point) {
 
 	float3 pos_rel = point - box_pos;
 
 	float3 nearest_pos_on_square = clamp(pos_rel, 0, box_size);
 
 	return length_sqr(nearest_pos_on_square - pos_rel);
-}
-
-float point_box_nearest_dist (float3 const& box_pos, float3 const& box_size, float3 const& point) {
-	return sqrt(point_box_nearest_dist_sqr(box_pos, box_size, point));
 }
 
 
@@ -241,7 +269,7 @@ void _minkowski_cylinder_cube__raycast_cap_plane (
 	}
 }
 
-void cylinder_cube_cast (float3 offset, float3 dir, float cyl_r, float cyl_h, CollisionHit* hit) {
+void cylinder_cube_cast (float3 const& offset, float3 const& dir, float cyl_r, float cyl_h, CollisionHit* hit) {
 	// this geometry we are raycasting onto represents the minowski sum of the cube and the cylinder
 
 	_minkowski_cylinder_cube__raycast_cap_plane(offset, dir, 1,		   +1, cyl_r, hit); // block top
@@ -256,4 +284,34 @@ void cylinder_cube_cast (float3 offset, float3 dir, float cyl_r, float cyl_h, Co
 	_minkowski_cylinder_cube__raycast_cylinder_side( offset, dir, float2( 0,+1), cyl_h, cyl_r, hit); // block rouned edge
 	_minkowski_cylinder_cube__raycast_cylinder_side( offset, dir, float2(+1, 0), cyl_h, cyl_r, hit); // block rouned edge
 	_minkowski_cylinder_cube__raycast_cylinder_side( offset, dir, float2(+1,+1), cyl_h, cyl_r, hit); // block rouned edge
+}
+
+bool ray_line_closest_intersect (float3 const& ray_pos, float3 const& ray_dir, float3 const& line_pos, float3 const& line_dir,
+	float3* intersect) {
+
+	float3 cross_dir = cross(ray_dir, line_dir);
+	float divisor = length_sqr(cross_dir);
+
+	if (divisor == 0.0f)
+		return false; // target ray and axis line are exactly parallel
+
+	float inv = 1.0f / divisor;
+	float3 rel = line_pos - ray_pos;
+
+	float3x3 m;
+	m.arr[0] = rel;
+	m.arr[1] = line_dir;
+	m.arr[2] = cross_dir;
+	float t_ray = determinant(m);
+	t_ray *= inv;
+
+	if (t_ray < 0.0f)
+		return false; // target ray points away from axis line (intersection would be backwards on the ray (behind the camera))
+
+	m.arr[1] = ray_dir;
+	float t_line = determinant(m);
+	t_line *= inv;
+
+	*intersect = line_pos + line_dir * t_line;
+	return true;
 }
