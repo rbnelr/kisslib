@@ -43,6 +43,10 @@ namespace kissmath {
 	static constexpr uint64_t GB = 1024ull*1024*1024;
 	static constexpr uint64_t TB = 1024ull*1024*1024*1024;
 
+	static constexpr uint64_t MSEC = 1000ull;
+	static constexpr uint64_t USEC = 1000ull*1000;
+	static constexpr uint64_t NSEC = 1000ull*1000*1000;
+
 	inline std::string _format_thousands (long long i, char sep, const char* printformat) {
 		std::string dst;
 		dst.reserve(27);

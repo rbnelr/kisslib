@@ -2,7 +2,7 @@
 #include "circular_buffer.hpp"
 
 // Running average with circular buffer
-//  resize allowed (although the array loses it's values then)
+//  resize allowed (array loses its values)
 //  avg is simply sum(values) / count
 //  T should probably be a float type
 template <typename T=float>
