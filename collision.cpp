@@ -140,6 +140,21 @@ bool frustrum_cull_aabb (View_Frustrum const& frust, float lx, float ly, float l
 	return false;
 }
 
+bool ray_plane_intersect (Ray const& ray, Plane const& plane, float3* hit) {
+	float3 offs = ray.pos - plane.pos;
+
+	float dist   = dot(offs   , plane.normal);
+	float dotdir = dot(ray.dir, plane.normal);
+	
+	// signs cancel out such that this works "above" or "below the plane
+	float t = -dist / dotdir;
+
+	if (t <= 0) return false; // ray points away from plane
+	
+	*hit = ray.dir * t + ray.pos;
+	return true;
+}
+
 // raycast against yz aligned plane from (pos_x, 0, -height) to (pos_x, 1, 1)
 void _minkowski_cylinder_cube__raycast_x_plane (
 		float3 ray_pos, float3 ray_dir,

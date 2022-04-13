@@ -47,6 +47,8 @@ float point_line_dist (float2 const& line_pos, float2 const& line_dir, float2 co
 // distance of point to line segment (line_dir allowed to be 0)
 float point_line_segment_dist (float2 const& line_pos, float2 const& line_dir, float2 const& point);
 
+bool ray_plane_intersect (Ray const& ray, Plane const& plane, float3* hit);
+
 // cull (return true) if AABB is completely outside of one of the view frustrums planes
 // this cull 99% of the AABB that are invisible, but returns a false negative sometimes
 bool frustrum_cull_aabb (View_Frustrum const& frust, float lx, float ly, float lz, float hx, float hy, float hz);
