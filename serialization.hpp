@@ -147,7 +147,7 @@ namespace nlohmann {
 	template <>	struct adl_serializer<int3> {
 		using type = int3;
 		static void to_json(ordered_json& j, const type& val) {
-			j = { val.x, val.y };
+			j = { val.x, val.y, val.z };
 		}
 		static void from_json(const ordered_json& j, type& val) {
 			j.at(0).get_to(val.x);
@@ -159,7 +159,7 @@ namespace nlohmann {
 	template <>	struct adl_serializer<int4> {
 		using type = int4;
 		static void to_json(ordered_json& j, const type& val) {
-			j = { val.x, val.y };
+			j = { val.x, val.y, val.z, val.w };
 		}
 		static void from_json(const ordered_json& j, type& val) {
 			j.at(0).get_to(val.x);
