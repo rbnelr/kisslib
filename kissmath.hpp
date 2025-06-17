@@ -332,7 +332,17 @@ namespace kissmath {
 		h ^= h >> r;
 
 		return h;
-	} 
+	}
+
+	inline float3x3 eulerXYZ (float3 ang) {
+		return rotate3_Z(ang.z) * rotate3_Y(ang.y) * rotate3_X(ang.x);
+	}
+	inline float3x4 transform (float3 pos, float3 euler_xyz) {
+		return translate(pos) * eulerXYZ(euler_xyz);
+	}
+	inline float3x4 transform (float3 pos, float3 euler_xyz, float3 scale) {
+		return translate(pos) * eulerXYZ(euler_xyz) * kissmath::scale(scale);
+	}
 
 	inline uint64_t hash (int         i, uint64_t seed=0) {      return MurmurHash64A_fixedlen<sizeof(i)>((uint32_t const*)&i, seed); };
 	inline uint64_t hash (int2 const& v, uint64_t seed=0) {      return MurmurHash64A_fixedlen<sizeof(v)>((uint32_t const*)&v, seed); };
