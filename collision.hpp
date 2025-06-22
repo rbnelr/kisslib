@@ -57,6 +57,7 @@ inline bool frustrum_cull_aabb (View_Frustrum const& frust, AABB const& aabb) {
 	return frustrum_cull_aabb(frust, aabb.lo.x, aabb.lo.y, aabb.lo.z, aabb.hi.x, aabb.hi.y, aabb.hi.z);
 }
 
+#if 0
 struct CollisionHit {
 	float dist; // how far obj A moved relative to obj B to hit it
 	float3 pos; // pos of obj A relative to obj B at collision time
@@ -70,6 +71,7 @@ struct CollisionHit {
 //  cyl_h  = cylinder.height
 // coll gets written to if calculated dist < coll->dist (init coll->dist to INF intially)
 void cylinder_cube_cast (float3 const& offset, float3 const& dir, float cyl_r, float cyl_h, CollisionHit* coll);
+#endif
 
 // some black magic math I found online at some point
 // returns closest point on infinite line to a ray passing it

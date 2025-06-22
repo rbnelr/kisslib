@@ -155,6 +155,7 @@ bool ray_plane_intersect (Ray const& ray, Plane const& plane, float3* hit) {
 	return true;
 }
 
+#if 0
 // raycast against yz aligned plane from (pos_x, 0, -height) to (pos_x, 1, 1)
 void _minkowski_cylinder_cube__raycast_x_plane (
 		float3 ray_pos, float3 ray_dir,
@@ -300,6 +301,7 @@ void cylinder_cube_cast (float3 const& offset, float3 const& dir, float cyl_r, f
 	_minkowski_cylinder_cube__raycast_cylinder_side( offset, dir, float2(+1, 0), cyl_h, cyl_r, hit); // block rouned edge
 	_minkowski_cylinder_cube__raycast_cylinder_side( offset, dir, float2(+1,+1), cyl_h, cyl_r, hit); // block rouned edge
 }
+#endif
 
 bool ray_line_closest_intersect (float3 const& ray_pos, float3 const& ray_dir, float3 const& line_pos, float3 const& line_dir,
 	float3* intersect) {
