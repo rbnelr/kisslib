@@ -38,6 +38,10 @@
 
 namespace kissmath {
 
+	inline constexpr float map_clamp (float x, float in_a, float in_b, float out_a, float out_b) {
+		return lerp(out_a, out_b, clamp(map(x, in_a, in_b), 0.0f, 1.0f));
+	}
+
 	static constexpr uint64_t KB = 1024ull;
 	static constexpr uint64_t MB = 1024ull*1024;
 	static constexpr uint64_t GB = 1024ull*1024*1024;

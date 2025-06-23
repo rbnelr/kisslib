@@ -4,6 +4,7 @@
 #include "file_io.hpp"
 #include "kissmath.hpp"
 #include <memory>
+#include "Tracy.hpp"
 using json = nlohmann::ordered_json;
 
 #ifndef SERIALIZE_LOG
