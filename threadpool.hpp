@@ -5,7 +5,7 @@
 #include "string.hpp"
 
 #ifdef TRACY_ENABLE
-	#include "Tracy.hpp"
+	#include "tracy/Tracy.hpp"
 	
 	#define THREADPOOL_PROFILER_SCOPED(name) ZoneScopedN(name)
 #else

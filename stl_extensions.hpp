@@ -6,7 +6,7 @@
 
 // Tracy tracked stl containers
 #ifdef TRACY_ENABLE
-	#include "Tracy.hpp"
+	#include "tracy/Tracy.hpp"
 
 	#define STL_PROFILE_SCOPED(name) ZoneScopedNC(name, tracy::Color::Crimson)
 	#define STL_PROFILE_ALLOC(ptr, size) TracyAlloc(ptr, size)

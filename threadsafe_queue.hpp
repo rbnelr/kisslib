@@ -6,7 +6,7 @@
 #include <vector>
 #include "stl_extensions.hpp"
 
-#include "Tracy.hpp"
+#include "tracy/Tracy.hpp"
 #ifdef TRACY_ENABLE
 	// Need to wrap locks for tracy
 	#define MUTEX				TracyLockableN(std::mutex,	m, "ThreadsafeQueue mutex")
