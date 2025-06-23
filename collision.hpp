@@ -12,7 +12,12 @@ struct Plane {
 struct AABB {
 	float3 lo;
 	float3 hi;
+
+	void dbgdraw (float3 pos, lrgba col);
 };
+inline AABB operator+ (AABB const& aabb, float3 const& offset) {
+	return { aabb.lo + offset, aabb.hi + offset };
+}
 
 struct View_Frustrum {
 	// The view frustrum planes in world space

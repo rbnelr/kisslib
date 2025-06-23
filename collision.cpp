@@ -1,4 +1,11 @@
 #include "collision.hpp"
+#include "engine/debug_draw.hpp"
+
+void AABB::dbgdraw (float3 pos, lrgba col) {
+	float3 sz = hi - lo;
+	float3 local_center = (lo + hi) * 0.5f;
+	g_debugdraw.wire_cube(pos + local_center, sz, col);
+}
 
 bool circle_square_intersect (float2 const& circ_origin, float circ_radius) {
 
