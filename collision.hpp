@@ -14,6 +14,13 @@ struct AABB {
 	float3 hi;
 
 	void dbgdraw (float3 pos, lrgba col);
+
+	bool overlaps (AABB const& r) const {
+		bool overlapX = lo.x < r.hi.x && hi.x > r.lo.x;
+		bool overlapY = lo.y < r.hi.y && hi.y > r.lo.y;
+		bool overlapZ = lo.z < r.hi.z && hi.z > r.lo.z;
+		return overlapX && overlapY && overlapZ;
+	}
 };
 inline AABB operator+ (AABB const& aabb, float3 const& offset) {
 	return { aabb.lo + offset, aabb.hi + offset };
